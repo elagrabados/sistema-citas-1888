@@ -1,5 +1,5 @@
 // ===============================================
-// ARCHIVO: script.js (Versión v5.4 - Confirmación Completa)
+// ARCHIVO: script.js (Versión v5.5 - Teléfono Actualizado)
 // ===============================================
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -18,7 +18,9 @@ document.addEventListener('DOMContentLoaded', () => {
             schedules: { weekday: ["9:00 AM", "12:00 PM", "2:00 PM", "3:00 PM"], weekend: ["8:15 AM", "10:00 AM", "12:15 PM", "2:00 PM", "3:00 PM", "4:00 PM"] }
         }
     };
-    const managerInfo = { name: "Isabella Ramos", phone: "(786) 529-6426" };
+    
+    // *** AQUÍ ESTÁ EL CAMBIO DE TELÉFONO ***
+    const managerInfo = { name: "Isabella Ramos", phone: "(786) 548-7819" };
 
     // --- ELEMENTOS ---
     const form = document.getElementById('citaForm');
@@ -116,7 +118,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const tratamiento = data.invitado1.split(' ')[0] || '';
         const nombreSolo = data.invitado1.split(' ').slice(1).join(' ') || data.invitado1;
 
-        // 1. MENSAJE OFERTA (Se mantiene igual)
+        // 1. MENSAJE OFERTA
         let msg1 = `CITA REGISTRADA - 1888 Hoteles\nAGENTE: ${data.agente}\n`;
         msg1 += esPareja ? `Invitados: ${data.invitado1} y ${data.invitado2}\n` : `Invitada: ${data.invitado1}\n`;
         msg1 += `Evento día: ${fechaTexto}\nHORA: ${data.hora}\n\nSUS VACACIONES DE CORTESÍA INCLUYE:\n\n${data.ofertaTexto}`;
@@ -135,12 +137,12 @@ document.addEventListener('DOMContentLoaded', () => {
         msg3 += `📲 ${esPareja ? 5 : 4}- Responder el mensaje de confirmación de mi manager ${managerInfo.name} (${managerInfo.phone}), que le enviara el ${prevDayTxt} para generar su código de parqueo.\n\n`;
         msg3 += `Por favor ${tratamiento} ${nombreSolo} lea bien los requisitos y me confirma si todo está claro.`;
 
-        // 4. CONFIRMACIÓN MANAGER (*** ACTUALIZADO ***)
+        // 4. CONFIRMACIÓN MANAGER (COMPLETO)
         const lugarClean = data.lugar === "Newport Beachside Resort" ? "Newport Beach Resort" : data.lugar;
         
         let msgConf = `¡Hola! ${data.invitado1} mi nombre es ${managerInfo.name} la persona que verifica las citas.\n`;
         msgConf += `Este texto es para confirmar su cita de mañana a las ${data.hora}, según su conversación con ${data.agente} vienes a retirar:\n\n`;
-        msgConf += `Vacaciones de cortesía:\n\n${data.ofertaTexto}\n\n`; // AHORA INCLUYE LA OFERTA COMPLETA
+        msgConf += `Vacaciones de cortesía:\n\n${data.ofertaTexto}\n\n`; 
         msgConf += `Nuestra dirección exacta: ${lugarClean}: ${venueData[data.lugar].address}.\n\n`;
         msgConf += `Por favor me confirma su asistencia con un "SI" para poderla recibir en el Lobby del Hotel.`;
 
