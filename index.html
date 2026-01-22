@@ -3,11 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Citas v5.2 - 1888hoteles</title>
+    <title>Sistema de Citas v5.3 - 1888hoteles</title>
     <style>
         body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;background-color:#f4f7f9;color:#333;line-height:1.6;margin:0;padding:20px}
         .container{max-width:950px;margin:0 auto;background-color:#fff;padding:25px 40px;border-radius:12px;box-shadow:0 6px 20px rgba(0,0,0,.08)}
+        /* CORRECCIÓN LOGO: Ajuste de tamaño y márgenes */
         .logo{display:block;margin:0 auto 20px;max-width:250px;height:auto}
+        
         h1,h2,h3{color:#1a3b5d;text-align:center}
         h3{margin-top:0; margin-bottom: 0;}
         .subtitle{text-align:center;color:#888;margin-top:0;margin-bottom:30px;font-style:italic}
@@ -32,7 +34,7 @@
         .copy-button{position:absolute;top:30px;right:10px;background-color:#28a745;color:#fff;border:none;padding:5px 10px;border-radius:4px;cursor:pointer}
         .hidden{display:none}
 
-        /* --- ESTILOS EXACTOS HISTORIAL (COMO TU FOTO) --- */
+        /* --- ESTILOS EXACTOS HISTORIAL --- */
         .history-section {margin-top:40px; border-top:2px solid #ddd; padding-top:20px;}
         
         .history-controls {
@@ -40,13 +42,13 @@
             justify-content:space-between; 
             align-items:center; 
             margin-bottom:15px;
-            background-color: #f8f9fa; /* Fondo gris claro opcional para la barra */
+            background-color: #f8f9fa;
             padding: 10px;
             border-radius: 6px;
         }
 
         #historySearchInput {
-            width: 300px; /* Ancho del buscador */
+            width: 300px;
             padding: 8px;
             border: 1px solid #ccc;
             border-radius: 4px;
@@ -66,10 +68,10 @@
         table {width:100%; border-collapse:collapse; font-size:0.9rem; margin-top: 10px;}
         th, td {border:1px solid #e9ecef; padding:12px; text-align:left;}
         th {background-color:#f2f2f2; color: #333; font-weight: 700;}
-        tr:nth-child(even) {background-color: #f9f9f9;} /* Filas alternas */
+        tr:nth-child(even) {background-color: #f9f9f9;}
 
         .regenerate-btn {
-            background-color:#17a2b8; /* El color Teal de tu foto */
+            background-color:#17a2b8;
             color:white; 
             border:none; 
             padding:6px 12px; 
@@ -79,7 +81,6 @@
         }
         .regenerate-btn:hover {background-color:#138496;}
 
-        /* Ajustes Mobile */
         @media (max-width:700px){
             .col-3,.col-4,.col-6,.col-8{grid-column: span 12}
             .history-controls {flex-direction: column; gap: 10px;}
@@ -94,7 +95,8 @@
 </head>
 <body>
     <div class="container">
-        <img src="images/logo.png" alt="Logo 1888hoteles" class="logo">
+        <img src="logo.png" alt="Logo 1888hoteles" class="logo">
+        
         <h1>Sistema de Citas y Lead Management</h1>
         <p class="subtitle">Desarrollado por Ali Gomez</p>
         
