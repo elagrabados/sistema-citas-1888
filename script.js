@@ -1,5 +1,5 @@
 // ===============================================
-// ARCHIVO: script.js (Versión v5.0 Sheets Ready)
+// ARCHIVO: script.js (Versión v5.1 Full History)
 // ===============================================
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -29,6 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const lugarSelect = document.getElementById('lugar');
     const fechaInput = document.getElementById('fecha');
     const horaSelect = document.getElementById('hora');
+    const clearHistoryButton = document.getElementById('clearHistoryButton');
     
     // LISTENERS
     tipoInvitacionSelect.addEventListener('change', toggleParejaFields);
@@ -36,6 +37,11 @@ document.addEventListener('DOMContentLoaded', () => {
     fechaInput.addEventListener('change', updateHorarios);
     generateButton.addEventListener('click', handleGenerate);
     copySheetsButton.addEventListener('click', copyForSheets);
+    if(clearHistoryButton) clearHistoryButton.addEventListener('click', () => {
+        if(confirm("¿Seguro que quieres borrar TODO el historial de la Nube?")) {
+            if(typeof clearHistoryDB === 'function') clearHistoryDB();
+        }
+    });
     
     document.querySelectorAll('.copy-button').forEach(btn => {
         btn.addEventListener('click', (e) => copyText(e.target.dataset.target, e.target));
@@ -62,7 +68,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const data = collectData();
         generateMessages(data);
         
-        // Guardar en la Nube (database.js)
+        // Guardar en la Nube
         if(typeof addAppointmentToHistory === 'function') {
             addAppointmentToHistory(data);
         }
@@ -93,13 +99,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function generateMessages(data) {
-        // Preparar variables de fecha
         const dateObj = new Date(data.fecha + 'T12:00:00Z');
         const dias = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
         const meses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
         const fechaTexto = `${dias[dateObj.getUTCDay()]} ${dateObj.getUTCDate()} de ${meses[dateObj.getUTCMonth()]}`;
         
-        // Calcular dia anterior para confirmacion
         const prevDay = new Date(dateObj);
         prevDay.setUTCDate(prevDay.getUTCDate() - 1);
         const prevDayTxt = dias[prevDay.getUTCDay()];
@@ -108,15 +112,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const tratamiento = data.invitado1.split(' ')[0] || '';
         const nombreSolo = data.invitado1.split(' ').slice(1).join(' ') || data.invitado1;
 
-        // 1. Mensaje Oferta
         let msg1 = `CITA REGISTRADA - 1888 Hoteles\nAGENTE: ${data.agente}\n`;
         msg1 += esPareja ? `Invitados: ${data.invitado1} y ${data.invitado2}\n` : `Invitada: ${data.invitado1}\n`;
         msg1 += `Evento día: ${fechaTexto}\nHORA: ${data.hora}\n\nSUS VACACIONES DE CORTESÍA INCLUYE:\n\n${data.ofertaTexto}`;
 
-        // 2. Mensaje Dirección
         let msg2 = `Dirección para retirar las vacaciones: ${venueData[data.lugar].address}`;
 
-        // 3. Mensaje Requisitos
         let msg3 = `IMPORTANTE REQUISITOS PARA RETIRAR SUS PREMIOS SIN INCONVENIENTES\n\n`;
         msg3 += esPareja 
             ? `📇 1- Deben asistir juntos con sus IDs o Licencia Vigentes.\n`
@@ -127,11 +128,10 @@ document.addEventListener('DOMContentLoaded', () => {
         msg3 += `📲 ${esPareja ? 5 : 4}- Responder el mensaje de confirmación de mi manager ${managerInfo.name} (${managerInfo.phone}), que le enviara el ${prevDayTxt} para generar su código de parqueo.\n\n`;
         msg3 += `Por favor ${tratamiento} ${nombreSolo} lea bien los requisitos y me confirma si todo está claro.`;
 
-        // 4. Confirmación Manager
         const lugarClean = data.lugar === "Newport Beachside Resort" ? "Newport Beach Resort" : data.lugar;
         let msgConf = `¡Hola! ${data.invitado1} mi nombre es ${managerInfo.name} la persona que verifica las citas.\n`;
         msgConf += `Este texto es para confirmar su cita de mañana a las ${data.hora}, según su conversación con ${data.agente} vienes a retirar:\n\n`;
-        msgConf += `Vacaciones de cortesía: ${data.destino} y beneficios adicionales.\n\n`;
+        msgConf += `Vacaciones de cortesía: ${data.destino || 'Paquete Vacacional'} y beneficios adicionales.\n\n`;
         msgConf += `Nuestra dirección exacta: ${lugarClean}: ${venueData[data.lugar].address}.\n\n`;
         msgConf += `Por favor me confirma su asistencia con un "SI" para poderla recibir en el lobby.`;
 
@@ -141,56 +141,30 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('confirmationOutput').value = msgConf;
     }
 
-    // --- FUNCIÓN CLAVE: COPIAR A GOOGLE SHEETS ---
+    // --- COPY TO SHEETS ---
     function copyForSheets() {
+        // ... (Misma lógica que antes, usando collectData del formulario)
+        // Nota: Si usas "Re-Generar", este botón usará los datos que estén actualmente en el FORMULARIO
+        // Para evitar errores, recomiendo rellenar el formulario primero o usarlo solo tras crear cita.
         const d = collectData();
-        
-        // 1. Calcular Fecha Creación (HOY) formato YYYY-MM-DD
         const today = new Date().toISOString().split('T')[0];
-        
-        // 2. Calcular Día de la Semana del Evento
         const dias = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
         const evtDate = new Date(d.fecha + 'T12:00:00Z');
         const diaSemana = dias[evtDate.getUTCDay()];
-
-        // 3. Status Marital (Mapeo de Q)
         const maritalStatus = d.tipoInvitacion === 'pareja' ? 'Casado/Union' : 'Soltera';
 
-        // CONSTRUCCIÓN DE LA FILA (ORDEN A - S)
-        // \t significa "Tabulador" (salta a la siguiente columna)
         const row = [
-            d.fuente,           // A- Fuente Lead
-            d.agente,           // B- Agente
-            "",                 // C- Status (Vacio)
-            d.lugar,            // D- Lugar
-            d.notas,            // E- Comentarios
-            today,              // F- Fecha Creación
-            d.fecha,            // G- Appt Date
-            diaSemana,          // H- Dia
-            d.hora,             // I- Time
-            "",                 // J- Tour ID (Vacio)
-            d.invitado1,        // K- Nombre 1
-            d.edad1,            // L- Edad 1
-            d.invitado2,        // M- Nombre 2
-            d.edad2,            // N- Edad 2
-            d.telefono,         // O- Telefono
-            d.email,            // P- Email
-            maritalStatus,      // Q- Marital Status
-            "",                 // R- (Columna R vacía en tu lista, asumo espacio)
-            d.destino           // S- Destino
+            d.fuente, d.agente, "", d.lugar, d.notas, today, d.fecha, diaSemana, d.hora,
+            "", d.invitado1, d.edad1, d.invitado2, d.edad2, d.telefono, d.email, maritalStatus, "", d.destino
         ].join('\t');
 
-        // Copiar al portapapeles
         navigator.clipboard.writeText(row).then(() => {
             const btn = document.getElementById('copySheetsButton');
-            const originalText = btn.textContent;
-            btn.textContent = "✅ ¡COPIADO! PEGA EN SHEETS";
+            const original = btn.textContent;
+            btn.textContent = "✅ ¡COPIADO!";
             btn.style.backgroundColor = "#054b25";
-            setTimeout(() => {
-                btn.textContent = originalText;
-                btn.style.backgroundColor = "#107c41";
-            }, 2000);
-        }).catch(err => alert("Error al copiar: " + err));
+            setTimeout(() => { btn.textContent = original; btn.style.backgroundColor = "#107c41"; }, 2000);
+        });
     }
 
     function updateHorarios() {
@@ -212,9 +186,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         horarios.forEach(h => {
             const opt = document.createElement('option');
-            opt.value = h;
-            opt.textContent = h;
-            horaSelect.appendChild(opt);
+            opt.value = h; opt.textContent = h; horaSelect.appendChild(opt);
         });
     }
 
@@ -227,19 +199,48 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => btn.textContent = original, 1500);
     }
     
+    // --- FUNCIÓN HISTORIAL RESTAURADA CON BOTÓN RE-GENERAR ---
     function renderHistory(data) {
-        // Lógica simple para mostrar historial si lo deseas
         const container = document.getElementById('historyTableBody');
         if(!container) return;
         container.innerHTML = '';
-        if(!data) return;
         
-        Object.values(data).reverse().slice(0, 10).forEach(cita => {
-            const div = document.createElement('div');
-            div.style.padding = "10px";
-            div.style.borderBottom = "1px solid #eee";
-            div.textContent = `${cita.generated} - ${cita.invitado1} (${cita.lugar})`;
-            container.appendChild(div);
+        if(!data) {
+            container.innerHTML = '<tr><td colspan="6" style="text-align:center">Sin historial</td></tr>';
+            return;
+        }
+        
+        Object.keys(data).reverse().slice(0, 15).forEach(key => { // Muestra últimos 15
+            const cita = data[key];
+            const row = document.createElement('tr');
+            
+            const invitadosTxt = (cita.tipoInvitacion === 'pareja' && cita.invitado2) 
+                ? `${cita.invitado1} y ${cita.invitado2}` 
+                : cita.invitado1;
+
+            row.innerHTML = `
+                <td data-label="Invitados">${invitadosTxt}</td>
+                <td data-label="Teléfono">${cita.telefono}</td>
+                <td data-label="Agente">${cita.agente}</td>
+                <td data-label="Lugar">${cita.lugar}</td>
+                <td data-label="Fecha">${cita.fecha} @ ${cita.hora}</td>
+                <td data-label="Acciones">
+                    <button class="regenerate-btn" data-key="${key}">Re-Generar</button>
+                </td>
+            `;
+            
+            // Lógica del botón Re-Generar
+            row.querySelector('.regenerate-btn').addEventListener('click', () => {
+                // 1. Regenerar Textos
+                generateMessages(cita);
+                // 2. Mostrar contenedor
+                outputContainer.classList.remove('hidden');
+                // 3. Scroll hacia abajo
+                window.scrollTo({ top: outputContainer.offsetTop - 20, behavior: 'smooth' });
+                alert("✅ Mensajes regenerados abajo. Ya puedes copiarlos.");
+            });
+
+            container.appendChild(row);
         });
     }
 });
