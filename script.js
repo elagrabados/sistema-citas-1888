@@ -1,5 +1,5 @@
 // ===============================================
-// ARCHIVO: script.js (Versión FINAL - Tabla y Excel)
+// ARCHIVO: script.js (Versión v5.4 - Confirmación Completa)
 // ===============================================
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -41,7 +41,6 @@ document.addEventListener('DOMContentLoaded', () => {
     generateButton.addEventListener('click', handleGenerate);
     copySheetsButton.addEventListener('click', copyForSheets);
     
-    // Botón Limpiar Historial
     if(clearHistoryButton) {
         clearHistoryButton.addEventListener('click', () => {
             if(confirm("⚠ ¿ESTÁS SEGURO? Esto borrará TODO el historial de la Nube para siempre.")) {
@@ -50,14 +49,12 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Buscador
     if(historySearchInput) {
         historySearchInput.addEventListener('input', () => {
             if(typeof localHistory !== 'undefined') renderHistory(localHistory); 
         });
     }
 
-    // Botones de copiar
     document.querySelectorAll('.copy-button').forEach(btn => {
         btn.addEventListener('click', (e) => copyText(e.target.dataset.target, e.target));
     });
@@ -119,12 +116,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const tratamiento = data.invitado1.split(' ')[0] || '';
         const nombreSolo = data.invitado1.split(' ').slice(1).join(' ') || data.invitado1;
 
+        // 1. MENSAJE OFERTA (Se mantiene igual)
         let msg1 = `CITA REGISTRADA - 1888 Hoteles\nAGENTE: ${data.agente}\n`;
         msg1 += esPareja ? `Invitados: ${data.invitado1} y ${data.invitado2}\n` : `Invitada: ${data.invitado1}\n`;
         msg1 += `Evento día: ${fechaTexto}\nHORA: ${data.hora}\n\nSUS VACACIONES DE CORTESÍA INCLUYE:\n\n${data.ofertaTexto}`;
 
+        // 2. MENSAJE DIRECCIÓN
         let msg2 = `Dirección para retirar las vacaciones: ${venueData[data.lugar].address}`;
 
+        // 3. MENSAJE REQUISITOS
         let msg3 = `IMPORTANTE REQUISITOS PARA RETIRAR SUS PREMIOS SIN INCONVENIENTES\n\n`;
         msg3 += esPareja 
             ? `📇 1- Deben asistir juntos con sus IDs o Licencia Vigentes.\n`
@@ -135,12 +135,14 @@ document.addEventListener('DOMContentLoaded', () => {
         msg3 += `📲 ${esPareja ? 5 : 4}- Responder el mensaje de confirmación de mi manager ${managerInfo.name} (${managerInfo.phone}), que le enviara el ${prevDayTxt} para generar su código de parqueo.\n\n`;
         msg3 += `Por favor ${tratamiento} ${nombreSolo} lea bien los requisitos y me confirma si todo está claro.`;
 
+        // 4. CONFIRMACIÓN MANAGER (*** ACTUALIZADO ***)
         const lugarClean = data.lugar === "Newport Beachside Resort" ? "Newport Beach Resort" : data.lugar;
+        
         let msgConf = `¡Hola! ${data.invitado1} mi nombre es ${managerInfo.name} la persona que verifica las citas.\n`;
         msgConf += `Este texto es para confirmar su cita de mañana a las ${data.hora}, según su conversación con ${data.agente} vienes a retirar:\n\n`;
-        msgConf += `Vacaciones de cortesía: ${data.destino || 'Paquete Vacacional'} y beneficios adicionales.\n\n`;
+        msgConf += `Vacaciones de cortesía:\n\n${data.ofertaTexto}\n\n`; // AHORA INCLUYE LA OFERTA COMPLETA
         msgConf += `Nuestra dirección exacta: ${lugarClean}: ${venueData[data.lugar].address}.\n\n`;
-        msgConf += `Por favor me confirma su asistencia con un "SI" para poderla recibir en el lobby.`;
+        msgConf += `Por favor me confirma su asistencia con un "SI" para poderla recibir en el Lobby del Hotel.`;
 
         document.getElementById('whatsappOutput1').value = msg1;
         document.getElementById('whatsappOutput2').value = msg2;
@@ -214,7 +216,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let historyKeys = Object.keys(data).reverse();
 
-        // Filtrado
         if (searchTerm) {
             historyKeys = historyKeys.filter(key => {
                 const entry = data[key];
@@ -229,7 +230,6 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         
-        // Dibujado
         historyKeys.slice(0, 20).forEach(key => {
             const cita = data[key];
             const row = document.createElement('tr');
