@@ -3,16 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Citas v5.1 - 1888hoteles</title>
+    <title>Sistema de Citas v5.2 - 1888hoteles</title>
     <style>
         body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;background-color:#f4f7f9;color:#333;line-height:1.6;margin:0;padding:20px}
         .container{max-width:950px;margin:0 auto;background-color:#fff;padding:25px 40px;border-radius:12px;box-shadow:0 6px 20px rgba(0,0,0,.08)}
         .logo{display:block;margin:0 auto 20px;max-width:250px;height:auto}
         h1,h2,h3{color:#1a3b5d;text-align:center}
-        h3{margin-top:30px;border-bottom:2px solid #eee;padding-bottom:10px}
+        h3{margin-top:0; margin-bottom: 0;}
         .subtitle{text-align:center;color:#888;margin-top:0;margin-bottom:30px;font-style:italic}
         
-        /* Grid mejorado */
+        /* Grid del Formulario */
         .form-grid{display:grid;grid-template-columns:repeat(12, 1fr);gap:15px}
         .col-3{grid-column: span 3} .col-4{grid-column: span 4} .col-6{grid-column: span 6} .col-8{grid-column: span 8} .col-12{grid-column: span 12}
         
@@ -32,19 +32,58 @@
         .copy-button{position:absolute;top:30px;right:10px;background-color:#28a745;color:#fff;border:none;padding:5px 10px;border-radius:4px;cursor:pointer}
         .hidden{display:none}
 
-        /* Estilos Tabla Historial */
+        /* --- ESTILOS EXACTOS HISTORIAL (COMO TU FOTO) --- */
         .history-section {margin-top:40px; border-top:2px solid #ddd; padding-top:20px;}
-        .history-header {display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;}
-        .clear-btn {background-color:#dc3545; color:white; border:none; padding:8px 12px; border-radius:4px; cursor:pointer;}
-        table {width:100%; border-collapse:collapse; font-size:0.9rem;}
-        th, td {border:1px solid #ddd; padding:10px; text-align:left;}
-        th {background-color:#f2f2f2;}
-        .regenerate-btn {background-color:#17a2b8; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer;}
+        
+        .history-controls {
+            display:flex; 
+            justify-content:space-between; 
+            align-items:center; 
+            margin-bottom:15px;
+            background-color: #f8f9fa; /* Fondo gris claro opcional para la barra */
+            padding: 10px;
+            border-radius: 6px;
+        }
+
+        #historySearchInput {
+            width: 300px; /* Ancho del buscador */
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .clear-btn {
+            background-color:#dc3545; 
+            color:white; 
+            border:none; 
+            padding:10px 15px; 
+            border-radius:5px; 
+            cursor:pointer;
+            font-weight: 600;
+        }
+        .clear-btn:hover {background-color: #c82333;}
+
+        table {width:100%; border-collapse:collapse; font-size:0.9rem; margin-top: 10px;}
+        th, td {border:1px solid #e9ecef; padding:12px; text-align:left;}
+        th {background-color:#f2f2f2; color: #333; font-weight: 700;}
+        tr:nth-child(even) {background-color: #f9f9f9;} /* Filas alternas */
+
+        .regenerate-btn {
+            background-color:#17a2b8; /* El color Teal de tu foto */
+            color:white; 
+            border:none; 
+            padding:6px 12px; 
+            border-radius:4px; 
+            cursor:pointer;
+            font-weight: 600;
+        }
         .regenerate-btn:hover {background-color:#138496;}
 
         /* Ajustes Mobile */
         @media (max-width:700px){
             .col-3,.col-4,.col-6,.col-8{grid-column: span 12}
+            .history-controls {flex-direction: column; gap: 10px;}
+            #historySearchInput {width: 100%;}
             table, thead, tbody, th, td, tr {display:block;}
             thead tr {position:absolute; top:-9999px; left:-9999px;}
             tr {margin-bottom:15px; border:1px solid #ccc;}
@@ -111,4 +150,98 @@
                 </div>
                 <div class="form-group col-6">
                     <label>P. Email (Opcional)</label>
-                    <input type="email" id="emailCliente
+                    <input type="email" id="emailCliente" placeholder="cliente@email.com">
+                </div>
+
+                <div class="form-group col-6">
+                    <label>D. Lugar de la Cita</label>
+                    <select id="lugar" required>
+                        <option value="">-- Seleccione --</option>
+                        <option value="Icon Park Orlando">Icon Park Orlando</option>
+                        <option value="Vista Cay Resort">Vista Cay Resort</option>
+                        <option value="Newport Beachside Resort">Newport Beachside Resort</option>
+                    </select>
+                </div>
+                <div class="form-group col-3">
+                    <label>G. Fecha Evento</label>
+                    <input type="date" id="fecha" required>
+                </div>
+                <div class="form-group col-3">
+                    <label>I. Hora</label>
+                    <select id="hora" required><option>--</option></select>
+                </div>
+
+                <div class="form-group col-12">
+                    <label>S. Destino Principal (Regalo)</label>
+                    <select id="destinoRegalo" required>
+                        <option value="Key West">Key West</option>
+                        <option value="Las Vegas">Las Vegas</option>
+                        <option value="Orlando">Orlando</option>
+                        <option value="Crucero">Crucero Bahamas</option>
+                        <option value="Punta Cana">Punta Cana</option>
+                        <option value="Cancun">Cancun</option>
+                        <option value="Otro">Otro</option>
+                    </select>
+                </div>
+
+                <div class="form-group col-12">
+                    <label>Descripción de Oferta (Para WhatsApp)</label>
+                    <textarea id="oferta" required>🏨 3 días y 2 noches de Hotel en Key West con desayunos incluidos. (Vigencia 18 meses) 
+
+👉 Y SOLO POR NUESTRA SEMANA ANIVERSARIA👈
+
+🍽 $200 para utilizar en consumo en Restaurantes.
+
+🏨 Hospedaje adicional 3 días y 2 noches en Las Vegas con boletería aérea ida y vuelta para dos personas</textarea>
+                </div>
+                
+                <div class="form-group col-12">
+                    <label>E. Comentarios / Notas Internas</label>
+                    <input type="text" id="notasInternas" placeholder="Opcional">
+                </div>
+            </div>
+            <button type="button" class="main-button" id="generateButton">Generar Cita</button>
+        </form>
+        
+        <div id="outputContainer" class="output-container hidden">
+            <button class="sheets-button" id="copySheetsButton">
+                📋 COPIAR FILA PARA GOOGLE SHEETS
+            </button>
+            <p style="text-align:center; font-size:0.8rem; color:#666; margin-top:-10px; margin-bottom:20px">Clic arriba y luego Ctrl+V en la Columna A de tu hoja</p>
+
+            <h3>Mensajes para WhatsApp</h3>
+            <div class="output-box"><label>1. Cita y Oferta</label><textarea id="whatsappOutput1" readonly></textarea><button class="copy-button" data-target="whatsappOutput1">Copiar</button></div>
+            <div class="output-box"><label>2. Dirección</label><textarea id="whatsappOutput2" readonly></textarea><button class="copy-button" data-target="whatsappOutput2">Copiar</button></div>
+            <div class="output-box"><label>3. Requisitos</label><textarea id="whatsappOutput3" readonly></textarea><button class="copy-button" data-target="whatsappOutput3">Copiar</button></div>
+            <div class="output-box"><label>4. Confirmación Manager</label><textarea id="confirmationOutput" readonly></textarea><button class="copy-button" data-target="confirmationOutput">Copiar</button></div>
+        </div>
+
+        <div class="history-section">
+             <div class="history-controls">
+                 <input type="search" id="historySearchInput" placeholder="Buscar por teléfono...">
+                 <button id="clearHistoryButton" class="clear-btn">Limpiar Historial</button>
+             </div>
+             
+             <table>
+                 <thead>
+                     <tr>
+                         <th>Invitados</th>
+                         <th>Teléfono</th>
+                         <th>Agente</th>
+                         <th>Lugar</th>
+                         <th>Fecha y Hora</th>
+                         <th>Generado</th>
+                         <th>Acciones</th>
+                     </tr>
+                 </thead>
+                 <tbody id="historyTableBody"></tbody>
+             </table>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="database.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
