@@ -1,9 +1,9 @@
 // ===============================================
-// ARCHIVO: script.js (Versión v5.2 Search Ready)
+// ARCHIVO: script.js (Versión FINAL - Tabla y Excel)
 // ===============================================
 
 document.addEventListener('DOMContentLoaded', () => {
-    // DATOS DE SEDES
+    // --- DATOS ---
     const venueData = {
         "Icon Park Orlando": { 
             address: "8375 International Drive, Orlando, FL 32819 Suite 50", 
@@ -20,7 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     const managerInfo = { name: "Isabella Ramos", phone: "(786) 529-6426" };
 
-    // ELEMENTOS
+    // --- ELEMENTOS ---
     const form = document.getElementById('citaForm');
     const generateButton = document.getElementById('generateButton');
     const copySheetsButton = document.getElementById('copySheetsButton');
@@ -30,50 +30,44 @@ document.addEventListener('DOMContentLoaded', () => {
     const fechaInput = document.getElementById('fecha');
     const horaSelect = document.getElementById('hora');
     
-    // Elementos del Historial
+    // Controles de Historial
     const clearHistoryButton = document.getElementById('clearHistoryButton');
     const historySearchInput = document.getElementById('historySearchInput');
-    
-    // LISTENERS
+
+    // --- EVENTOS ---
     tipoInvitacionSelect.addEventListener('change', toggleParejaFields);
     lugarSelect.addEventListener('change', updateHorarios);
     fechaInput.addEventListener('change', updateHorarios);
     generateButton.addEventListener('click', handleGenerate);
     copySheetsButton.addEventListener('click', copyForSheets);
     
-    // Listener de Limpiar Historial
-    if(clearHistoryButton) clearHistoryButton.addEventListener('click', () => {
-        if(confirm("¿Seguro que quieres borrar TODO el historial de la Nube?")) {
-            if(typeof clearHistoryDB === 'function') clearHistoryDB();
-        }
-    });
-
-    // Listener de Búsqueda (IMPORTANTE: Lógica restaurada)
-    if(historySearchInput) {
-        historySearchInput.addEventListener('input', () => {
-            // Usamos una variable global que debería venir de database.js, 
-            // pero si no, usamos el renderHistory con lo que tengamos.
-            // Nota: listenToHistory ya llama a renderHistory cada vez que hay cambios.
-            // Aquí forzamos un re-render usando los datos locales almacenados.
-            if(typeof localHistory !== 'undefined') {
-                renderHistory(localHistory); 
+    // Botón Limpiar Historial
+    if(clearHistoryButton) {
+        clearHistoryButton.addEventListener('click', () => {
+            if(confirm("⚠ ¿ESTÁS SEGURO? Esto borrará TODO el historial de la Nube para siempre.")) {
+                if(typeof clearHistoryDB === 'function') clearHistoryDB();
             }
         });
     }
-    
+
+    // Buscador
+    if(historySearchInput) {
+        historySearchInput.addEventListener('input', () => {
+            if(typeof localHistory !== 'undefined') renderHistory(localHistory); 
+        });
+    }
+
+    // Botones de copiar
     document.querySelectorAll('.copy-button').forEach(btn => {
         btn.addEventListener('click', (e) => copyText(e.target.dataset.target, e.target));
     });
 
-    // INICIO
+    // --- INICIALIZACIÓN ---
     toggleParejaFields();
     updateHorarios();
-    // Conectamos con Firebase y pasamos la función renderHistory para que pinte la tabla
     if(typeof listenToHistory === 'function') listenToHistory(renderHistory);
 
-
-    // --- FUNCIONES ---
-
+    // --- FUNCIONES LÓGICAS ---
     function toggleParejaFields() {
         const esPareja = tipoInvitacionSelect.value === 'pareja';
         const fields = document.querySelectorAll('.invitado2-field');
@@ -83,15 +77,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function handleGenerate() {
         if (!form.checkValidity()) { form.reportValidity(); return; }
-        
         const data = collectData();
         generateMessages(data);
-        
-        // Guardar en la Nube
-        if(typeof addAppointmentToHistory === 'function') {
-            addAppointmentToHistory(data);
-        }
-
+        if(typeof addAppointmentToHistory === 'function') addAppointmentToHistory(data);
         outputContainer.classList.remove('hidden');
         window.scrollTo({ top: outputContainer.offsetTop - 20, behavior: 'smooth' });
     }
@@ -113,7 +101,7 @@ document.addEventListener('DOMContentLoaded', () => {
             ofertaTexto: document.getElementById('oferta').value,
             notas: document.getElementById('notasInternas').value,
             tipoInvitacion: tipoInvitacionSelect.value,
-            generated: new Date().toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' }) // Formato corto
+            generated: new Date().toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' })
         };
     }
 
@@ -187,18 +175,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const fecha = fechaInput.value;
         horaSelect.innerHTML = '<option value="">--</option>';
         if (!lugar || !fecha) return;
-
         const dateObj = new Date(fecha + 'T12:00:00Z');
         const day = dateObj.getUTCDay();
         const venue = venueData[lugar];
-        
         let horarios = venue.schedules.any || [];
         if (!horarios.length) {
             const isWeekend = (day === 0 || day === 6);
             const isFriIcon = lugar.includes("Icon") && day === 5;
             horarios = (isWeekend || isFriIcon) ? venue.schedules.weekend : venue.schedules.weekday;
         }
-
         horarios.forEach(h => {
             const opt = document.createElement('option');
             opt.value = h; opt.textContent = h; horaSelect.appendChild(opt);
@@ -217,23 +202,22 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- RENDERIZADO DE TABLA (FILTRABLE) ---
     function renderHistory(data) {
         const container = document.getElementById('historyTableBody');
-        const searchTerm = document.getElementById('historySearchInput').value.toLowerCase().trim();
+        const searchTerm = document.getElementById('historySearchInput') ? document.getElementById('historySearchInput').value.toLowerCase().trim() : '';
         
         if(!container) return;
         container.innerHTML = '';
         
         if(!data) {
-            container.innerHTML = '<tr><td colspan="7" style="text-align:center">Cargando...</td></tr>';
+            container.innerHTML = '<tr><td colspan="7" style="text-align:center">Sin datos</td></tr>';
             return;
         }
 
         let historyKeys = Object.keys(data).reverse();
 
-        // 1. FILTRADO (Lógica recuperada)
+        // Filtrado
         if (searchTerm) {
             historyKeys = historyKeys.filter(key => {
                 const entry = data[key];
-                // Buscamos por teléfono (limpiando símbolos para que sea más fácil)
                 const telLimpio = entry.telefono ? entry.telefono.replace(/\D/g, '') : '';
                 const busquedaLimpia = searchTerm.replace(/\D/g, '');
                 return telLimpio.includes(busquedaLimpia);
@@ -245,8 +229,8 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         
-        // 2. DIBUJADO DE FILAS
-        historyKeys.slice(0, 20).forEach(key => { // Muestra últimos 20
+        // Dibujado
+        historyKeys.slice(0, 20).forEach(key => {
             const cita = data[key];
             const row = document.createElement('tr');
             
@@ -259,7 +243,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td data-label="Teléfono">${cita.telefono}</td>
                 <td data-label="Agente">${cita.agente}</td>
                 <td data-label="Lugar">${cita.lugar}</td>
-                <td data-label="Fecha y Hora">${cita.fecha} a las <br>${cita.hora}</td>
+                <td data-label="Fecha y Hora">${cita.fecha}<br>${cita.hora}</td>
                 <td data-label="Generado">${cita.generated || 'N/A'}</td>
                 <td data-label="Acciones">
                     <button class="regenerate-btn" data-key="${key}">Re-Generar</button>
@@ -270,7 +254,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 generateMessages(cita);
                 outputContainer.classList.remove('hidden');
                 window.scrollTo({ top: outputContainer.offsetTop - 20, behavior: 'smooth' });
-                // Feedback visual breve
                 alert("✅ Datos cargados arriba.");
             });
 
