@@ -1,5 +1,5 @@
 // ===============================================
-// ARCHIVO: script.js (Versión v5.1 Full History)
+// ARCHIVO: script.js (Versión v5.2 Search Ready)
 // ===============================================
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -29,7 +29,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const lugarSelect = document.getElementById('lugar');
     const fechaInput = document.getElementById('fecha');
     const horaSelect = document.getElementById('hora');
+    
+    // Elementos del Historial
     const clearHistoryButton = document.getElementById('clearHistoryButton');
+    const historySearchInput = document.getElementById('historySearchInput');
     
     // LISTENERS
     tipoInvitacionSelect.addEventListener('change', toggleParejaFields);
@@ -37,11 +40,26 @@ document.addEventListener('DOMContentLoaded', () => {
     fechaInput.addEventListener('change', updateHorarios);
     generateButton.addEventListener('click', handleGenerate);
     copySheetsButton.addEventListener('click', copyForSheets);
+    
+    // Listener de Limpiar Historial
     if(clearHistoryButton) clearHistoryButton.addEventListener('click', () => {
         if(confirm("¿Seguro que quieres borrar TODO el historial de la Nube?")) {
             if(typeof clearHistoryDB === 'function') clearHistoryDB();
         }
     });
+
+    // Listener de Búsqueda (IMPORTANTE: Lógica restaurada)
+    if(historySearchInput) {
+        historySearchInput.addEventListener('input', () => {
+            // Usamos una variable global que debería venir de database.js, 
+            // pero si no, usamos el renderHistory con lo que tengamos.
+            // Nota: listenToHistory ya llama a renderHistory cada vez que hay cambios.
+            // Aquí forzamos un re-render usando los datos locales almacenados.
+            if(typeof localHistory !== 'undefined') {
+                renderHistory(localHistory); 
+            }
+        });
+    }
     
     document.querySelectorAll('.copy-button').forEach(btn => {
         btn.addEventListener('click', (e) => copyText(e.target.dataset.target, e.target));
@@ -50,6 +68,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // INICIO
     toggleParejaFields();
     updateHorarios();
+    // Conectamos con Firebase y pasamos la función renderHistory para que pinte la tabla
     if(typeof listenToHistory === 'function') listenToHistory(renderHistory);
 
 
@@ -94,7 +113,7 @@ document.addEventListener('DOMContentLoaded', () => {
             ofertaTexto: document.getElementById('oferta').value,
             notas: document.getElementById('notasInternas').value,
             tipoInvitacion: tipoInvitacionSelect.value,
-            generated: new Date().toLocaleString('es-ES')
+            generated: new Date().toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' }) // Formato corto
         };
     }
 
@@ -141,11 +160,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('confirmationOutput').value = msgConf;
     }
 
-    // --- COPY TO SHEETS ---
     function copyForSheets() {
-        // ... (Misma lógica que antes, usando collectData del formulario)
-        // Nota: Si usas "Re-Generar", este botón usará los datos que estén actualmente en el FORMULARIO
-        // Para evitar errores, recomiendo rellenar el formulario primero o usarlo solo tras crear cita.
         const d = collectData();
         const today = new Date().toISOString().split('T')[0];
         const dias = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
@@ -199,23 +214,44 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => btn.textContent = original, 1500);
     }
     
-    // --- FUNCIÓN HISTORIAL RESTAURADA CON BOTÓN RE-GENERAR ---
+    // --- RENDERIZADO DE TABLA (FILTRABLE) ---
     function renderHistory(data) {
         const container = document.getElementById('historyTableBody');
+        const searchTerm = document.getElementById('historySearchInput').value.toLowerCase().trim();
+        
         if(!container) return;
         container.innerHTML = '';
         
         if(!data) {
-            container.innerHTML = '<tr><td colspan="6" style="text-align:center">Sin historial</td></tr>';
+            container.innerHTML = '<tr><td colspan="7" style="text-align:center">Cargando...</td></tr>';
+            return;
+        }
+
+        let historyKeys = Object.keys(data).reverse();
+
+        // 1. FILTRADO (Lógica recuperada)
+        if (searchTerm) {
+            historyKeys = historyKeys.filter(key => {
+                const entry = data[key];
+                // Buscamos por teléfono (limpiando símbolos para que sea más fácil)
+                const telLimpio = entry.telefono ? entry.telefono.replace(/\D/g, '') : '';
+                const busquedaLimpia = searchTerm.replace(/\D/g, '');
+                return telLimpio.includes(busquedaLimpia);
+            });
+        }
+        
+        if(historyKeys.length === 0) {
+            container.innerHTML = '<tr><td colspan="7" style="text-align:center">No hay resultados</td></tr>';
             return;
         }
         
-        Object.keys(data).reverse().slice(0, 15).forEach(key => { // Muestra últimos 15
+        // 2. DIBUJADO DE FILAS
+        historyKeys.slice(0, 20).forEach(key => { // Muestra últimos 20
             const cita = data[key];
             const row = document.createElement('tr');
             
             const invitadosTxt = (cita.tipoInvitacion === 'pareja' && cita.invitado2) 
-                ? `${cita.invitado1} y ${cita.invitado2}` 
+                ? `${cita.invitado1}<br><small>y ${cita.invitado2}</small>` 
                 : cita.invitado1;
 
             row.innerHTML = `
@@ -223,21 +259,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td data-label="Teléfono">${cita.telefono}</td>
                 <td data-label="Agente">${cita.agente}</td>
                 <td data-label="Lugar">${cita.lugar}</td>
-                <td data-label="Fecha">${cita.fecha} @ ${cita.hora}</td>
+                <td data-label="Fecha y Hora">${cita.fecha} a las <br>${cita.hora}</td>
+                <td data-label="Generado">${cita.generated || 'N/A'}</td>
                 <td data-label="Acciones">
                     <button class="regenerate-btn" data-key="${key}">Re-Generar</button>
                 </td>
             `;
             
-            // Lógica del botón Re-Generar
             row.querySelector('.regenerate-btn').addEventListener('click', () => {
-                // 1. Regenerar Textos
                 generateMessages(cita);
-                // 2. Mostrar contenedor
                 outputContainer.classList.remove('hidden');
-                // 3. Scroll hacia abajo
                 window.scrollTo({ top: outputContainer.offsetTop - 20, behavior: 'smooth' });
-                alert("✅ Mensajes regenerados abajo. Ya puedes copiarlos.");
+                // Feedback visual breve
+                alert("✅ Datos cargados arriba.");
             });
 
             container.appendChild(row);
