@@ -54,9 +54,7 @@
         }
 
         /* CAPTCHA */
-        .captcha-row {
-            display: flex; gap: 10px; margin-bottom: 15px; align-items: center;
-        }
+        .captcha-row { display: flex; gap: 10px; margin-bottom: 15px; align-items: center; }
         #captchaQuestion {
             background: #e2e8f0; color: #0f172a; font-weight: bold;
             padding: 12px; border-radius: 8px; width: 40%;
@@ -163,9 +161,35 @@
         .output-box { position: relative; margin-bottom: 20px; }
         .hidden { display: none; }
         
+        /* ESTILOS TABLA RESTAURADOS */
+        .history-section { margin-top: 50px; border-top: 2px solid #e2e8f0; padding-top: 30px; }
+        .history-controls { 
+            display: flex; justify-content: space-between; align-items: center; 
+            margin-bottom: 20px; background: #f8fafc; padding: 15px; border-radius: 10px;
+        }
+        #historySearchInput { width: 300px; padding: 10px; border: 1px solid #cbd5e1; }
+        
+        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        th { background: var(--primary-color); color: white; padding: 12px; text-align: left; }
+        td { padding: 12px; border-bottom: 1px solid #e2e8f0; }
+        tr:hover { background-color: #f1f5f9; }
+        
+        .regenerate-btn {
+            background-color: #0284c7; color: white; border: none; padding: 6px 12px;
+            border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 0.85rem;
+        }
+        .regenerate-btn:hover { background-color: #0369a1; }
+        
         @media (max-width: 850px) {
             .control-panel { flex-direction: column; align-items: flex-start; gap: 15px; }
             .col-3, .col-4, .col-6, .col-8 { grid-column: span 12; }
+            
+            /* Tabla responsiva */
+            table, thead, tbody, th, td, tr { display: block; }
+            thead tr { position: absolute; top: -9999px; left: -9999px; }
+            tr { margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px; }
+            td { border: none; border-bottom: 1px solid #eee; position: relative; padding-left: 50%; }
+            td:before { position: absolute; top: 12px; left: 10px; width: 45%; padding-right: 10px; white-space: nowrap; font-weight: bold; content: attr(data-label); color: var(--primary-color); }
         }
     </style>
 </head>
@@ -190,12 +214,10 @@
     </div>
 
     <script>
-        // Este script corre ANTES de que cargue el resto de la app
-        // para asegurar que el Captcha aparezca al instante.
         (function() {
             var num1 = Math.floor(Math.random() * 9) + 1;
             var num2 = Math.floor(Math.random() * 9) + 1;
-            window.captchaSum = num1 + num2; // Guardar resultado globalmente
+            window.captchaSum = num1 + num2;
             var questionBox = document.getElementById('captchaQuestion');
             if(questionBox) {
                 questionBox.textContent = num1 + " + " + num2 + " = ?";
@@ -333,13 +355,26 @@
                 </div>
             </div>
             
-            <div style="margin-top:50px; border-top:1px solid #ddd; padding-top:20px;">
-                <div style="display:flex; justify-content:space-between;">
-                    <h3 style="margin:0;">Base de Datos en Nube</h3>
-                    <button id="clearHistoryButton" style="background:red; color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer;">Limpiar</button>
+            <div class="history-section">
+                <div class="history-controls">
+                    <h3 style="margin:0; color:var(--primary-color);">Base de Datos en Nube</h3>
+                    <input type="search" id="historySearchInput" placeholder="🔍 Buscar por teléfono...">
+                    <button id="clearHistoryButton" style="background:red; color:white; border:none; padding:10px; border-radius:5px; cursor:pointer;">Borrar Todo</button>
                 </div>
-                <input type="search" id="historySearchInput" placeholder="Buscar..." style="margin:10px 0; width:100%; padding:10px;">
-                <div id="historyTableBody"></div>
+                
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Invitados</th>
+                            <th>Teléfono</th>
+                            <th>Agente</th>
+                            <th>Lugar</th>
+                            <th>Fecha</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyTableBody"></tbody>
+                </table>
             </div>
         </div>
     </div>
@@ -349,7 +384,6 @@
     <script src="database.js"></script>
 
     <script>
-        // CONFIGURACIÓN DE USUARIOS
         const USERS = {
             "isabela":  { pass: "admin2026",  name: "Isabella Ramos", role: "admin" },
             "paula":    { pass: "citas2026*", name: "Paula González", role: "admin" },
@@ -362,7 +396,6 @@
         let loginTime = null;
 
         document.addEventListener('DOMContentLoaded', () => {
-            // Foco en usuario
             document.getElementById('loginUser').focus();
 
             const venueData = {
@@ -387,6 +420,7 @@
             const copySheetsButton = document.getElementById('copySheetsButton');
             const outputContainer = document.getElementById('outputContainer');
             const btnWaClient = document.getElementById('btnWaClient');
+            const historySearchInput = document.getElementById('historySearchInput');
 
             // --- LOGIN ---
             btnLogin.addEventListener('click', performLogin);
@@ -398,10 +432,8 @@
                 const p = loginPass.value.trim();
                 const c = parseInt(document.getElementById('captchaInput').value);
 
-                // Verificar Captcha
                 if (isNaN(c) || c !== window.captchaSum) {
                     showError("⛔ ERROR MATEMÁTICO (CAPTCHA)");
-                    // Recargar captcha
                     var num1 = Math.floor(Math.random() * 9) + 1;
                     var num2 = Math.floor(Math.random() * 9) + 1;
                     window.captchaSum = num1 + num2;
@@ -440,7 +472,6 @@
                 document.querySelector('.login-box').animate([{ transform: 'translateX(0)' }, { transform: 'translateX(-10px)' }, { transform: 'translateX(10px)' }, { transform: 'translateX(0)' }], { duration: 300 });
             }
 
-            // --- DASHBOARD ---
             function renderStatusPanel() {
                 agentsGrid.innerHTML = '';
                 Object.keys(USERS).forEach(key => {
@@ -508,6 +539,11 @@
             // Init Helpers
             updateHorarios();
             if(typeof listenToHistory === 'function') listenToHistory(renderHistory);
+            
+            // --- BUSCADOR ---
+            historySearchInput.addEventListener('input', () => {
+                if(typeof localHistory !== 'undefined') renderHistory(localHistory);
+            });
 
             function updateHorarios() {
                 const venue = venueData[document.getElementById('lugar').value];
@@ -574,15 +610,72 @@
                 document.getElementById('confirmationOutput').value = msgConf;
             }
 
+            // --- FUNCIÓN RENDERIZAR TABLA (RESTAURADA) ---
             function renderHistory(data) {
-                const div = document.getElementById('historyTableBody');
-                div.innerHTML = '';
-                if(!data) return;
-                Object.keys(data).reverse().slice(0,10).forEach(key => {
-                    const row = document.createElement('div');
-                    row.style.borderBottom = '1px solid #ccc'; row.style.padding='10px';
-                    row.innerHTML = `<strong>${data[key].invitado1}</strong> (${data[key].telefono}) <br> <small>${data[key].generated}</small>`;
-                    div.appendChild(row);
+                const container = document.getElementById('historyTableBody');
+                const searchTerm = historySearchInput.value.toLowerCase().trim(); // Leer valor del buscador
+                
+                if(!container) return;
+                container.innerHTML = '';
+                
+                if(!data) {
+                    container.innerHTML = '<tr><td colspan="6" style="text-align:center">Sin datos</td></tr>';
+                    return;
+                }
+
+                let historyKeys = Object.keys(data).reverse();
+
+                // FILTRO DE BÚSQUEDA
+                if (searchTerm) {
+                    historyKeys = historyKeys.filter(key => {
+                        const entry = data[key];
+                        const telLimpio = entry.telefono ? entry.telefono.replace(/\D/g, '') : '';
+                        const busquedaLimpia = searchTerm.replace(/\D/g, '');
+                        return telLimpio.includes(busquedaLimpia);
+                    });
+                }
+
+                if(historyKeys.length === 0) {
+                    container.innerHTML = '<tr><td colspan="6" style="text-align:center">No hay resultados</td></tr>';
+                    return;
+                }
+
+                // DIBUJAR FILAS
+                historyKeys.slice(0, 20).forEach(key => {
+                    const cita = data[key];
+                    const row = document.createElement('tr');
+                    
+                    const invitadosTxt = (cita.tipoInvitacion === 'pareja' && cita.invitado2) 
+                        ? `${cita.invitado1}<br><small>y ${cita.invitado2}</small>` 
+                        : cita.invitado1;
+
+                    row.innerHTML = `
+                        <td data-label="Invitados">${invitadosTxt}</td>
+                        <td data-label="Teléfono">${cita.telefono}</td>
+                        <td data-label="Agente">${cita.agente}</td>
+                        <td data-label="Lugar">${cita.lugar}</td>
+                        <td data-label="Fecha">${cita.fecha}<br>${cita.hora}</td>
+                        <td data-label="Acciones">
+                            <button class="regenerate-btn" data-key="${key}">Re-Generar</button>
+                        </td>
+                    `;
+                    
+                    // BOTÓN RE-GENERAR FUNCIONAL
+                    row.querySelector('.regenerate-btn').addEventListener('click', () => {
+                        generateMessages(cita);
+                        outputContainer.classList.remove('hidden');
+                        
+                        if(currentUser && currentUser.role !== "admin") {
+                            managerSection.style.display = "none";
+                        } else {
+                            managerSection.style.display = "block";
+                        }
+                        
+                        window.scrollTo({ top: outputContainer.offsetTop - 20, behavior: 'smooth' });
+                        alert("✅ Datos cargados arriba.");
+                    });
+
+                    container.appendChild(row);
                 });
             }
         });
