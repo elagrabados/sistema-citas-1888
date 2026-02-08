@@ -408,7 +408,7 @@
 
         let currentUser = null;
         let loginTime = null;
-        let lastGeneratedCita = null; // MEMORIA RAM PARA BOTONES
+        let lastGeneratedCita = null; // MEMORIA RAM
 
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('loginUser').focus();
@@ -567,27 +567,33 @@
 
             if(btnWaClient) {
                 btnWaClient.addEventListener('click', () => {
-                    // Usar memoria RAM si existe, sino leer del form
                     let raw = "";
+                    // Prioridad: Memoria -> Formulario
                     if(lastGeneratedCita) {
                         raw = lastGeneratedCita.telefono;
                     } else {
-                        raw = document.getElementById('telefonoCliente').value.replace(/\D/g, '');
-                        if(raw.length === 10) raw = '1' + raw;
+                        // Limpiar input del form
+                        let val = document.getElementById('telefonoCliente').value.replace(/\D/g, '');
+                        if(val.length === 11 && val.startsWith('1')) val = val.substring(1);
+                        raw = val;
                     }
                     
-                    if(!raw || raw.length < 10) return alert("⚠️ No se encuentra un teléfono válido. Genera una cita primero.");
+                    // Asegurar 10 digitos
+                    if(!raw || raw.length !== 10) return alert("⚠️ No se encuentra un teléfono válido (10 dígitos).");
+                    
+                    // Agregar 1 para WhatsApp
+                    const finalPhone = '1' + raw;
                     
                     const message = document.getElementById('confirmationOutput').value;
-                    const url = `https://api.whatsapp.com/send?phone=${raw}&text=${encodeURIComponent(message)}`;
+                    const url = `https://api.whatsapp.com/send?phone=${finalPhone}&text=${encodeURIComponent(message)}`;
                     window.open(url, '_blank');
                 });
             }
 
-            // BOTÓN COPIAR EXCEL (AHORA SÍ FUNCIONA CON MEMORIA)
+            // BOTÓN COPIAR EXCEL (SIN BLOQUEOS)
             copySheetsButton.addEventListener('click', () => {
                 if(!lastGeneratedCita) {
-                    alert("⚠️ Primero genera una cita o selecciona una del historial.");
+                    alert("⚠️ No hay datos recientes. Genera una cita o selecciona del historial.");
                     return;
                 }
                 const d = lastGeneratedCita;
