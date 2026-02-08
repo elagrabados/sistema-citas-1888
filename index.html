@@ -25,7 +25,7 @@
             min-height: 100vh;
         }
 
-        /* --- LOGIN FIX (CAMPO BLANCO / LETRA NEGRA) --- */
+        /* --- LOGIN --- */
         #loginOverlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: radial-gradient(circle at center, #1e293b 0%, #000000 100%);
@@ -52,9 +52,8 @@
             margin-bottom: 15px; width: 100%;
             font-size: 1rem; box-sizing: border-box;
         }
-        .login-box input::placeholder { color: #666; }
 
-        /* ESTILO CAPTCHA */
+        /* CAPTCHA */
         .captcha-row {
             display: flex; gap: 10px; margin-bottom: 15px; align-items: center;
         }
@@ -75,9 +74,9 @@
             transition: all 0.3s;
         }
         .login-btn:hover { background: #b45309; transform: scale(1.02); }
-        .error-msg { color: #ff4d4d; margin-top: 15px; font-weight: bold; display: none; background: rgba(0,0,0,0.3); padding: 5px; border-radius: 4px;}
+        .error-msg { color: #ff4d4d; margin-top: 15px; font-weight: bold; display: none; background: rgba(0,0,0,0.5); padding: 5px; border-radius: 4px;}
 
-        /* --- APP PRINCIPAL --- */
+        /* --- APP --- */
         #appContent { display: none; max-width: 1100px; margin: 0 auto; }
 
         .control-panel {
@@ -89,7 +88,7 @@
             border-bottom: 4px solid var(--accent-color);
         }
 
-        .status-grid { display: flex; gap: 20px; }
+        .status-grid { display: flex; gap: 20px; flex-wrap: wrap; }
         
         .agent-status {
             display: flex; align-items: center; gap: 8px;
@@ -109,8 +108,6 @@
             box-shadow: 0 0 8px #10b981;
             animation: pulse 2s infinite;
         }
-
-        .login-time { font-size: 0.75rem; color: #94a3b8; margin-left: 5px; font-family: 'Roboto Mono', monospace; }
 
         .miami-clock { text-align: right; }
         .clock-time { font-family: 'Roboto Mono', monospace; font-size: 1.5rem; font-weight: 700; color: var(--accent-color); text-shadow: 0 0 10px rgba(217, 119, 6, 0.5); }
@@ -168,8 +165,6 @@
         
         @media (max-width: 850px) {
             .control-panel { flex-direction: column; align-items: flex-start; gap: 15px; }
-            .status-grid { flex-wrap: wrap; }
-            .miami-clock { text-align: left; width: 100%; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px; }
             .col-3, .col-4, .col-6, .col-8 { grid-column: span 12; }
         }
     </style>
@@ -185,7 +180,7 @@
             <input type="password" id="loginPass" placeholder="Contraseña">
             
             <div class="captcha-row">
-                <div id="captchaQuestion">Calculando...</div>
+                <div id="captchaQuestion">Cargando...</div>
                 <input type="number" id="captchaInput" placeholder="Resultado">
             </div>
 
@@ -196,10 +191,9 @@
 
     <div id="appContent">
         <div class="control-panel">
-            <div class="status-grid" id="agentsGrid">
-                </div>
+            <div class="status-grid" id="agentsGrid"></div>
             <div class="miami-clock">
-                <div class="clock-time" id="miamiTime">00:00:00 AM</div>
+                <div class="clock-time" id="miamiTime">--:--:--</div>
                 <div class="clock-label">MIAMI EST (HORA OFICIAL)</div>
             </div>
         </div>
@@ -330,7 +324,7 @@
                     <h3 style="margin:0;">Base de Datos en Nube</h3>
                     <button id="clearHistoryButton" style="background:red; color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer;">Limpiar</button>
                 </div>
-                <input type="search" id="historySearchInput" placeholder="Buscar..." style="margin:10px 0;">
+                <input type="search" id="historySearchInput" placeholder="Buscar..." style="margin:10px 0; width:100%; padding:10px;">
                 <div id="historyTableBody"></div>
             </div>
         </div>
@@ -339,6 +333,144 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <script src="database.js"></script>
-    <script src="script.js"></script>
-</body>
-</html>
+
+    <script>
+        // --- CONFIGURACIÓN DE USUARIOS ---
+        const USERS = {
+            "isabela":  { pass: "admin2026",  name: "Isabella Ramos", role: "admin" },
+            "paula":    { pass: "citas2026*", name: "Paula González", role: "admin" },
+            "patricia": { pass: "citas2026*", name: "Patricia Bustos", role: "agente" },
+            "ana":      { pass: "citas2026*", name: "Ana Chacon",     role: "agente" },
+            "andrea":   { pass: "citas2026*", name: "Andrea Venegas", role: "agente" }
+        };
+
+        let currentUser = null;
+        let loginTime = null;
+        let captchaSum = 0;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initCaptcha();
+            document.getElementById('loginUser').focus();
+
+            const venueData = {
+                "Icon Park Orlando": { address: "8375 International Drive, Orlando, FL 32819 Suite 50", schedules: { weekday: ["11:00 AM", "12:30 PM", "2:00 PM", "3:30 PM"], weekend: ["11:00 AM", "12:00 PM", "1:00 PM", "2:00 PM", "3:00 PM"] }},
+                "Vista Cay Resort": { address: "9650 Universal Blvd, Suite 120 Orlando, FL 32819", schedules: { any: ["9:00 AM", "11:00 AM", "1:00 PM", "3:00 PM"] }},
+                "Newport Beachside Resort": { address: "16701 Collins Ave, Sunny Isles Beach, FL 33160\nHotel Newport Beachside Resort", schedules: { weekday: ["9:00 AM", "12:00 PM", "2:00 PM", "3:00 PM"], weekend: ["8:15 AM", "10:00 AM", "12:15 PM", "2:00 PM", "3:00 PM", "4:00 PM"] }}
+            };
+            const managerInfo = { name: "Isabella Ramos", phone: "(786) 5487-7819" };
+
+            // ELEMENTOS
+            const loginOverlay = document.getElementById('loginOverlay');
+            const appContent = document.getElementById('appContent');
+            const btnLogin = document.getElementById('btnLogin');
+            const loginUser = document.getElementById('loginUser');
+            const loginPass = document.getElementById('loginPass');
+            const loginError = document.getElementById('loginError');
+            const managerSection = document.getElementById('managerSection');
+            const userDisplay = document.getElementById('userDisplay');
+            const agentsGrid = document.getElementById('agentsGrid');
+            const form = document.getElementById('citaForm');
+            const generateButton = document.getElementById('generateButton');
+            const copySheetsButton = document.getElementById('copySheetsButton');
+            const outputContainer = document.getElementById('outputContainer');
+            const btnWaClient = document.getElementById('btnWaClient');
+
+            // --- LOGIN ---
+            btnLogin.addEventListener('click', performLogin);
+            document.getElementById('captchaInput').addEventListener('keypress', (e) => { if(e.key === 'Enter') performLogin(); });
+            loginPass.addEventListener('keypress', (e) => { if(e.key === 'Enter') performLogin(); });
+
+            function initCaptcha() {
+                const num1 = Math.floor(Math.random() * 9) + 1;
+                const num2 = Math.floor(Math.random() * 9) + 1;
+                captchaSum = num1 + num2;
+                document.getElementById('captchaQuestion').textContent = `${num1} + ${num2} = ?`;
+                document.getElementById('captchaInput').value = '';
+            }
+
+            function performLogin() {
+                const u = loginUser.value.toLowerCase().trim();
+                const p = loginPass.value.trim();
+                const c = parseInt(document.getElementById('captchaInput').value);
+
+                if (isNaN(c) || c !== captchaSum) {
+                    showError("⛔ ERROR MATEMÁTICO (CAPTCHA)");
+                    initCaptcha();
+                    return;
+                }
+
+                if (USERS[u] && USERS[u].pass === p) {
+                    currentUser = USERS[u];
+                    loginTime = new Date().toLocaleTimeString('en-US', { timeZone: 'America/New_York', hour: '2-digit', minute: '2-digit' });
+                    
+                    loginOverlay.style.display = "none";
+                    appContent.style.display = "block";
+                    userDisplay.textContent = currentUser.name;
+                    document.getElementById('agente').value = currentUser.name;
+
+                    if (currentUser.role !== "admin") {
+                        managerSection.style.display = "none";
+                        document.getElementById('clearHistoryButton').style.display = "none";
+                    } else {
+                        managerSection.style.display = "block";
+                        document.getElementById('clearHistoryButton').style.display = "block";
+                    }
+                    
+                    renderStatusPanel();
+                    startMiamiClock();
+                } else {
+                    showError("⛔ ACCESO DENEGADO");
+                }
+            }
+
+            function showError(msg) {
+                loginError.textContent = msg;
+                loginError.style.display = "block";
+                document.querySelector('.login-box').animate([{ transform: 'translateX(0)' }, { transform: 'translateX(-10px)' }, { transform: 'translateX(10px)' }, { transform: 'translateX(0)' }], { duration: 300 });
+            }
+
+            // --- DASHBOARD ---
+            function renderStatusPanel() {
+                agentsGrid.innerHTML = '';
+                Object.keys(USERS).forEach(key => {
+                    const user = USERS[key];
+                    const isMe = (user.name === currentUser.name);
+                    const div = document.createElement('div');
+                    div.className = 'agent-status';
+                    const statusClass = isMe ? 'online' : '';
+                    const statusText = isMe ? `ENTRADA: ${loginTime}` : 'OFFLINE';
+                    div.innerHTML = `<div class="status-light ${statusClass}"></div><span>${user.name.split(' ')[0]}</span><span style="font-size:0.7em; opacity:0.7; margin-left:5px;">${statusText}</span>`;
+                    agentsGrid.appendChild(div);
+                });
+            }
+
+            function startMiamiClock() {
+                setInterval(() => {
+                    const now = new Date();
+                    document.getElementById('miamiTime').textContent = now.toLocaleTimeString('en-US', { timeZone: 'America/New_York', hour12: true, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                }, 1000);
+            }
+
+            // --- APP LOGIC ---
+            document.getElementById('tipoInvitacion').addEventListener('change', function() {
+                const esPareja = this.value === 'pareja';
+                document.querySelectorAll('.invitado2-field').forEach(f => f.style.display = esPareja ? 'block' : 'none');
+                document.getElementById('invitado2').required = esPareja;
+            });
+
+            document.getElementById('lugar').addEventListener('change', updateHorarios);
+            document.getElementById('fecha').addEventListener('change', updateHorarios);
+            
+            generateButton.addEventListener('click', () => {
+                if (!form.checkValidity()) { form.reportValidity(); return; }
+                const data = collectData();
+                generateMessages(data);
+                if(typeof addAppointmentToHistory === 'function') addAppointmentToHistory(data);
+                outputContainer.classList.remove('hidden');
+                if(currentUser.role !== "admin") managerSection.style.display = "none";
+                window.scrollTo({ top: outputContainer.offsetTop - 20, behavior: 'smooth' });
+            });
+
+            if(btnWaClient) {
+                btnWaClient.addEventListener('click', () => {
+                    let raw =
