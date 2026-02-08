@@ -161,7 +161,7 @@
         .output-box { position: relative; margin-bottom: 20px; }
         .hidden { display: none; }
         
-        /* ESTILOS TABLA RESTAURADOS */
+        /* ESTILOS TABLA */
         .history-section { margin-top: 50px; border-top: 2px solid #e2e8f0; padding-top: 30px; }
         .history-controls { 
             display: flex; justify-content: space-between; align-items: center; 
@@ -183,8 +183,6 @@
         @media (max-width: 850px) {
             .control-panel { flex-direction: column; align-items: flex-start; gap: 15px; }
             .col-3, .col-4, .col-6, .col-8 { grid-column: span 12; }
-            
-            /* Tabla responsiva */
             table, thead, tbody, th, td, tr { display: block; }
             thead tr { position: absolute; top: -9999px; left: -9999px; }
             tr { margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px; }
@@ -309,19 +307,17 @@
                         <select id="hora" required><option>--</option></select>
                     </div>
                     <div class="form-group col-12">
-                        <label>S. Destino Principal</label>
+                        <label>S. Destino Principal (Regalo)</label>
                         <select id="destinoRegalo" required>
                             <option value="Key West">Key West</option>
-                            <option value="Las Vegas">Las Vegas</option>
                             <option value="Orlando">Orlando</option>
                             <option value="Crucero">Crucero Bahamas</option>
-                            <option value="Punta Cana">Punta Cana</option>
-                            <option value="Cancun">Cancun</option>
+                            <option value="Punta Cana">Punta Cana / Puerto Rico</option>
                             <option value="Otro">Otro</option>
                         </select>
                     </div>
                     <div class="form-group col-12">
-                        <label>Descripción de Oferta (Para WhatsApp)</label>
+                        <label>Descripción de Oferta (Automática)</label>
                         <textarea id="oferta" required>🏨 3 días y 2 noches de Hotel en Key West con desayunos incluidos. (Vigencia 18 meses) 
 
 👉 Y SOLO POR NUESTRA SEMANA ANIVERSARIA👈
@@ -401,9 +397,24 @@
             const venueData = {
                 "Icon Park Orlando": { address: "8375 International Drive, Orlando, FL 32819 Suite 50", schedules: { weekday: ["11:00 AM", "12:30 PM", "2:00 PM", "3:30 PM"], weekend: ["11:00 AM", "12:00 PM", "1:00 PM", "2:00 PM", "3:00 PM"] }},
                 "Vista Cay Resort": { address: "9650 Universal Blvd, Suite 120 Orlando, FL 32819", schedules: { any: ["9:00 AM", "11:00 AM", "1:00 PM", "3:00 PM"] }},
-                "Newport Beachside Resort": { address: "16701 Collins Ave, Sunny Isles Beach, FL 33160\nHotel Newport Beachside Resort", schedules: { weekday: ["9:00 AM", "12:00 PM", "2:00 PM", "3:00 PM"], weekend: ["8:15 AM", "10:00 AM", "12:15 PM", "2:00 PM", "3:00 PM", "4:00 PM"] }}
+                "Newport Beachside Resort": { address: "16701 Collins Ave, Sunny Isles Beach, FL 33160\nThe Sunny Hotel.", schedules: { weekday: ["9:00 AM", "12:00 PM", "2:00 PM", "3:00 PM"], weekend: ["8:15 AM", "10:00 AM", "12:15 PM", "2:00 PM", "3:00 PM", "4:00 PM"] }}
             };
             const managerInfo = { name: "Isabella Ramos", phone: "(786) 5487-7819" };
+
+            // LOGICA OFERTAS DINAMICAS
+            const ofertaMap = {
+                "Orlando": "🏨 4 días y 3 noches de hospedaje en Orlando FL.\n🎟️ 2 entradas a los parques de Disney",
+                "Crucero": "🚢 5/4 Noches Crucero Carnival a Mexico o el Caribe. Todas Comidas y Bebidas no alcoholicas incluidas.",
+                "Punta Cana": "🏨 4 días y 3 noches Punta Cana o Puerto Rico con boletería aérea ida y vuelta para dos personas.",
+                "default": "🏨 3 días y 2 noches de Hotel en Key West con desayunos incluidos. (Vigencia 18 meses)"
+            };
+            const footerOferta = "\n\n👉 Y SOLO POR NUESTRA SEMANA ANIVERSARIA👈\n\n🍽 $200 para utilizar en consumo en Restaurantes.\n\n🏨 Hospedaje adicional 3 días y 2 noches en Las Vegas con boletería aérea ida y vuelta para dos personas";
+
+            document.getElementById('destinoRegalo').addEventListener('change', function() {
+                const val = this.value;
+                let texto = ofertaMap[val] || ofertaMap["default"];
+                document.getElementById('oferta').value = texto + footerOferta;
+            });
 
             // ELEMENTOS
             const loginOverlay = document.getElementById('loginOverlay');
@@ -599,9 +610,35 @@
                 const meses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
                 const fechaTexto = `${dias[dateObj.getUTCDay()]} ${dateObj.getUTCDate()} de ${meses[dateObj.getUTCMonth()]}`;
                 
-                let msg1 = `CITA REGISTRADA - 1888 Hoteles\nAGENTE: ${data.agente}\nInvitados: ${data.invitado1}\nEvento: ${fechaTexto} ${data.hora}\n\n${data.ofertaTexto}`;
-                let msg2 = `Dirección: ${venueData[data.lugar].address}`;
-                let msg3 = `REQUISITOS:\n1- IDs Vigentes\n2- Tarjeta de Crédito (No débito)\n3- 90 min de tiempo`;
+                const prevDay = new Date(dateObj);
+                prevDay.setUTCDate(prevDay.getUTCDate() - 1);
+                const prevDayTxt = dias[prevDay.getUTCDay()];
+
+                const esPareja = data.tipoInvitacion === 'pareja';
+                
+                let msg1 = `CITA REGISTRADA - 1888 Hoteles\nAGENTE: ${data.agente}\n`;
+                msg1 += esPareja ? `Invitados: ${data.invitado1} y ${data.invitado2}\n` : `Invitada: ${data.invitado1}\n`;
+                msg1 += `Evento día: ${fechaTexto}\nHORA: ${data.hora}\n\nSUS VACACIONES DE CORTESÍA INCLUYE:\n\n${data.ofertaTexto}`;
+
+                let msg2 = `Dirección para retirar las vacaciones:\n${venueData[data.lugar].address}`;
+
+                // LOGICA REQUISITOS (con el cambio de "no tiene costo")
+                let msg3 = `IMPORTANTE REQUISITOS PARA RETIRAR SUS PREMIOS SIN INCONVENIENTES\n\n`;
+                msg3 += esPareja 
+                    ? `📇 1- Deben asistir juntos con sus IDs o Licencia Vigentes.\n`
+                    : `📇 1- Debes asistir junto con su ID o Licencia Vigente.\n`;
+                msg3 += `💳 2- Mostrar una tarjeta de crédito (NO DÉBITO). No debe pagar nada. Requisito protocolar para check-in.\n`;
+                msg3 += `🕑 3- El evento dura 90 a 120 minutos, sin ningún compromiso de compra.\n`;
+                
+                if (esPareja) {
+                    msg3 += `👨‍👩‍👦 4- Deben tener la misma dirección en los Ids o Prueba de convivencia.\n`;
+                    msg3 += `📲 5- Responder el mensaje de confirmación de mi manager Isabella Ramos ((786) 548-7819), que le enviara el ${prevDayTxt} para generar su código de parqueo y no tenga ningun costo.\n\n`;
+                } else {
+                    msg3 += `📲 4- Responder el mensaje de confirmación de mi manager Isabella Ramos ((786) 548-7819), que le enviara el ${prevDayTxt} para generar su código de parqueo y no tenga ningun costo.\n\n`;
+                }
+                
+                msg3 += `Por favor ${data.invitado1} lea bien los requisitos y me confirma si todo está claro.`;
+
                 let msgConf = `¡Hola! ${data.invitado1} soy ${managerInfo.name}.\nConfirmando cita para mañana ${data.hora} en ${data.lugar}.\n\n${data.ofertaTexto}\n\nPor favor confirmar con SI.`;
 
                 document.getElementById('whatsappOutput1').value = msg1;
@@ -610,10 +647,10 @@
                 document.getElementById('confirmationOutput').value = msgConf;
             }
 
-            // --- FUNCIÓN RENDERIZAR TABLA (RESTAURADA) ---
+            // --- FUNCIÓN RENDERIZAR TABLA (FIX RE-GENERAR) ---
             function renderHistory(data) {
                 const container = document.getElementById('historyTableBody');
-                const searchTerm = historySearchInput.value.toLowerCase().trim(); // Leer valor del buscador
+                const searchTerm = historySearchInput.value.toLowerCase().trim();
                 
                 if(!container) return;
                 container.innerHTML = '';
@@ -625,7 +662,7 @@
 
                 let historyKeys = Object.keys(data).reverse();
 
-                // FILTRO DE BÚSQUEDA
+                // FILTRO
                 if (searchTerm) {
                     historyKeys = historyKeys.filter(key => {
                         const entry = data[key];
@@ -660,16 +697,17 @@
                         </td>
                     `;
                     
-                    // BOTÓN RE-GENERAR FUNCIONAL + RELLENADO DE FORMULARIO
+                    // --- AQUÍ ESTABA EL BUG (SOLUCIONADO) ---
                     row.querySelector('.regenerate-btn').addEventListener('click', () => {
-                        // 1. RELLENAR FORMULARIO (CRÍTICO PARA WHATSAPP)
+                        // 1. LLENAR FORMULARIO CON DATOS DE LA CITA
                         document.getElementById('telefonoCliente').value = cita.telefono;
                         document.getElementById('invitado1').value = cita.invitado1;
-                        // Opcional: Rellenar otros si quieres que se vea todo
-                        // document.getElementById('lugar').value = cita.lugar;
+                        document.getElementById('tipoInvitacion').value = cita.tipoInvitacion;
+                        document.getElementById('oferta').value = cita.ofertaTexto; // Restaurar texto oferta
                         
-                        // 2. GENERAR MENSAJES
+                        // 2. GENERAR MENSAJES CON ESOS DATOS
                         generateMessages(cita);
+                        
                         outputContainer.classList.remove('hidden');
                         
                         if(currentUser && currentUser.role !== "admin") {
@@ -679,7 +717,7 @@
                         }
                         
                         window.scrollTo({ top: outputContainer.offsetTop - 20, behavior: 'smooth' });
-                        alert("✅ Datos cargados arriba.");
+                        alert("✅ Datos cargados y listos para WhatsApp.");
                     });
 
                     container.appendChild(row);
