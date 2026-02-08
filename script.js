@@ -1,5 +1,5 @@
 // ===============================================
-// ARCHIVO: script.js (Versión v5.5 - Teléfono Actualizado)
+// ARCHIVO: script.js (Versión v5.8 - FINAL DE HOY)
 // ===============================================
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -19,8 +19,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
     
-    // *** AQUÍ ESTÁ EL CAMBIO DE TELÉFONO ***
-    const managerInfo = { name: "Isabella Ramos", phone: "(786) 548-7819" };
+    // NUEVO TELÉFONO DE ISABELLA
+    const managerInfo = { name: "Isabella Ramos", phone: "(786) 5487-7819" };
 
     // --- ELEMENTOS ---
     const form = document.getElementById('citaForm');
@@ -35,6 +35,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Controles de Historial
     const clearHistoryButton = document.getElementById('clearHistoryButton');
     const historySearchInput = document.getElementById('historySearchInput');
+    
+    // Botón WhatsApp
+    const btnWaClient = document.getElementById('btnWaClient');
 
     // --- EVENTOS ---
     tipoInvitacionSelect.addEventListener('change', toggleParejaFields);
@@ -42,6 +45,29 @@ document.addEventListener('DOMContentLoaded', () => {
     fechaInput.addEventListener('change', updateHorarios);
     generateButton.addEventListener('click', handleGenerate);
     copySheetsButton.addEventListener('click', copyForSheets);
+    
+    // LOGICA BOTÓN WHATSAPP CLIENTE
+    if(btnWaClient) {
+        btnWaClient.addEventListener('click', () => {
+            let rawPhone = document.getElementById('telefonoCliente').value;
+            let phone = rawPhone.replace(/\D/g, ''); 
+            
+            // Si tiene 10 dígitos (USA), agregar 1 para WhatsApp
+            if(phone.length === 10) {
+                phone = '1' + phone;
+            }
+
+            const message = document.getElementById('confirmationOutput').value;
+
+            if(!phone) {
+                alert("Por favor ingrese un teléfono válido.");
+                return;
+            }
+
+            const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+            window.open(url, '_blank');
+        });
+    }
     
     if(clearHistoryButton) {
         clearHistoryButton.addEventListener('click', () => {
@@ -76,7 +102,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function handleGenerate() {
         if (!form.checkValidity()) { form.reportValidity(); return; }
-        const data = collectData();
+        const data = collectData(); 
         generateMessages(data);
         if(typeof addAppointmentToHistory === 'function') addAppointmentToHistory(data);
         outputContainer.classList.remove('hidden');
@@ -84,6 +110,29 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function collectData() {
+        // 1. LIMPIEZA INTELIGENTE DE TELÉFONO
+        let phoneInput = document.getElementById('telefonoCliente');
+        let cleanPhone = phoneInput.value.replace(/\D/g, ''); 
+        // Si escribieron 11 dígitos y empieza con 1 (Ej: 1786...), quitamos el 1 inicial
+        if (cleanPhone.length === 11 && cleanPhone.startsWith('1')) {
+            cleanPhone = cleanPhone.substring(1); 
+            phoneInput.value = cleanPhone; 
+        }
+
+        // 2. GENERACIÓN AUTOMÁTICA DE EMAIL (Protocolar)
+        let emailInput = document.getElementById('emailCliente');
+        let emailVal = emailInput.value.trim();
+
+        if (emailVal === "") {
+            const nombreRaw = document.getElementById('invitado1').value || "invitado";
+            const nombreLimpio = nombreRaw.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z]/g, "");
+            const numeros = Math.floor(Math.random() * 90 + 10);
+            const dominio = Math.random() > 0.5 ? "gmail.com" : "hotmail.com";
+            
+            emailVal = `${nombreLimpio}${numeros}@${dominio}`;
+            emailInput.value = emailVal;
+        }
+        
         return {
             fuente: document.getElementById('fuenteLead').value,
             agente: document.getElementById('agente').value,
@@ -91,8 +140,8 @@ document.addEventListener('DOMContentLoaded', () => {
             edad1: document.getElementById('edad1').value,
             invitado2: document.getElementById('invitado2').value,
             edad2: document.getElementById('edad2').value,
-            telefono: document.getElementById('telefonoCliente').value,
-            email: document.getElementById('emailCliente').value,
+            telefono: cleanPhone,
+            email: emailVal,
             lugar: lugarSelect.value,
             fecha: fechaInput.value,
             hora: horaSelect.value,
@@ -203,7 +252,6 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => btn.textContent = original, 1500);
     }
     
-    // --- RENDERIZADO DE TABLA (FILTRABLE) ---
     function renderHistory(data) {
         const container = document.getElementById('historyTableBody');
         const searchTerm = document.getElementById('historySearchInput') ? document.getElementById('historySearchInput').value.toLowerCase().trim() : '';
