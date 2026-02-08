@@ -408,7 +408,7 @@
 
         let currentUser = null;
         let loginTime = null;
-        let currentPhoneForWA = ""; // Variable para guardar el teléfono aunque se limpie el form
+        let currentPhoneForWA = ""; // Memoria temporal del teléfono
 
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('loginUser').focus();
@@ -538,7 +538,7 @@
             resetButton.addEventListener('click', () => {
                 form.reset();
                 if(currentUser) document.getElementById('agente').value = currentUser.name;
-                currentPhoneForWA = ""; // Limpiar memoria
+                currentPhoneForWA = ""; 
                 outputContainer.classList.add('hidden');
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             });
@@ -549,7 +549,7 @@
                 const data = collectData();
                 generateMessages(data);
                 
-                // GUARDAR TELÉFONO EN MEMORIA PARA WHATSAPP
+                // GUARDAR TELÉFONO EN MEMORIA
                 currentPhoneForWA = data.telefono;
 
                 if(typeof addAppointmentToHistory === 'function') addAppointmentToHistory(data);
@@ -567,13 +567,15 @@
 
             if(btnWaClient) {
                 btnWaClient.addEventListener('click', () => {
-                    // Usar memoria si existe, sino intentar leer del form (por si acaso)
-                    let raw = currentPhoneForWA || document.getElementById('telefonoCliente').value.replace(/\D/g, '');
+                    // INTELIGENCIA DE BOTÓN: Busca en memoria SI la casilla está vacía
+                    let raw = document.getElementById('telefonoCliente').value.replace(/\D/g, '');
+                    if(!raw || raw.length < 5) {
+                        raw = currentPhoneForWA; // Usar memoria si el form está limpio
+                    }
                     
-                    // Limpieza extra por seguridad
                     if(raw.length === 10) raw = '1' + raw;
                     
-                    if(!raw || raw.length < 10) return alert("Teléfono inválido o no encontrado.");
+                    if(!raw || raw.length < 10) return alert("⚠️ No se encuentra un teléfono válido. Regenera la cita desde el historial.");
                     
                     const message = document.getElementById('confirmationOutput').value;
                     const url = `https://api.whatsapp.com/send?phone=${raw}&text=${encodeURIComponent(message)}`;
@@ -739,9 +741,21 @@
                     `;
                     
                     row.querySelector('.regenerate-btn').addEventListener('click', () => {
-                        // RE-GENERAR
+                        // 1. RELLENAR FORMULARIO (VISUALMENTE)
+                        document.getElementById('telefonoCliente').value = cita.telefono;
+                        document.getElementById('invitado1').value = cita.invitado1;
+                        document.getElementById('tipoInvitacion').value = cita.tipoInvitacion;
+                        document.getElementById('lugar').value = cita.lugar;
+                        document.getElementById('fecha').value = cita.fecha;
+                        document.getElementById('oferta').value = cita.ofertaTexto; 
+                        
+                        // Fix invitado 2 visibility
+                        document.getElementById('tipoInvitacion').dispatchEvent(new Event('change'));
+                        if(cita.invitado2) document.getElementById('invitado2').value = cita.invitado2;
+
+                        // 2. GENERAR MENSAJES + MEMORIA WA
                         generateMessages(cita);
-                        currentPhoneForWA = cita.telefono; // CARGAR MEMORIA PARA WHATSAPP
+                        currentPhoneForWA = cita.telefono; 
                         
                         outputContainer.classList.remove('hidden');
                         if(currentUser && currentUser.role !== "admin") {
@@ -751,7 +765,7 @@
                         }
                         
                         window.scrollTo({ top: outputContainer.offsetTop - 20, behavior: 'smooth' });
-                        alert("✅ Datos cargados arriba.");
+                        alert("✅ Datos recuperados en el formulario y mensajes.");
                     });
 
                     container.appendChild(row);
