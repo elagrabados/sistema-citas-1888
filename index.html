@@ -660,8 +660,15 @@
                         </td>
                     `;
                     
-                    // BOTÓN RE-GENERAR FUNCIONAL
+                    // BOTÓN RE-GENERAR FUNCIONAL + RELLENADO DE FORMULARIO
                     row.querySelector('.regenerate-btn').addEventListener('click', () => {
+                        // 1. RELLENAR FORMULARIO (CRÍTICO PARA WHATSAPP)
+                        document.getElementById('telefonoCliente').value = cita.telefono;
+                        document.getElementById('invitado1').value = cita.invitado1;
+                        // Opcional: Rellenar otros si quieres que se vea todo
+                        // document.getElementById('lugar').value = cita.lugar;
+                        
+                        // 2. GENERAR MENSAJES
                         generateMessages(cita);
                         outputContainer.classList.remove('hidden');
                         
