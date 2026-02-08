@@ -3,83 +3,233 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Citas v5.8 - 1888hoteles</title>
+    <title>1888 Hoteles | Enterprise System</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
     <style>
-        body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;background-color:#f4f7f9;color:#333;line-height:1.6;margin:0;padding:20px}
-        .container{max-width:950px;margin:0 auto;background-color:#fff;padding:25px 40px;border-radius:12px;box-shadow:0 6px 20px rgba(0,0,0,.08)}
-        .logo{display:block;margin:0 auto 20px;max-width:250px;height:auto}
-        
-        h1,h2,h3{color:#1a3b5d;text-align:center}
-        h3{margin-top:0; margin-bottom: 0;}
-        .subtitle{text-align:center;color:#888;margin-top:0;margin-bottom:30px;font-style:italic}
-        
-        .form-grid{display:grid;grid-template-columns:repeat(12, 1fr);gap:15px}
-        .col-3{grid-column: span 3} .col-4{grid-column: span 4} .col-6{grid-column: span 6} .col-8{grid-column: span 8} .col-12{grid-column: span 12}
-        
-        .form-group{display:flex;flex-direction:column}
-        label{font-weight:600;margin-bottom:5px;color:#555;font-size:0.9rem}
-        input,select,textarea{width:100%;padding:10px;border:1px solid #ccc;border-radius:6px;font-size:1rem}
-        textarea{resize:vertical;min-height:100px}
-        
-        .main-button{background-color:#007bff;color:#fff;padding:15px;border:none;border-radius:8px;font-weight:700;font-size:1.2rem;width:100%;cursor:pointer;margin-top:20px}
-        .main-button:hover{background-color:#0056b3}
-        
-        .sheets-button{background-color:#107c41;color:#fff;padding:12px;border:none;border-radius:6px;font-weight:700;width:100%;cursor:pointer;margin-bottom:15px;display:flex;align-items:center;justify-content:center;gap:10px}
-        .sheets-button:hover{background-color:#0b5c30}
-        
-        /* ESTILO NUEVO: Botón de WhatsApp */
-        .wa-button{
-            position:absolute;
-            top:30px;
-            right:80px; /* Al lado del botón Copiar */
-            background-color:#25D366;
-            color:#fff;
-            border:none;
-            padding:5px 10px;
-            border-radius:4px;
-            cursor:pointer;
-            font-weight:bold;
-            display:flex;
-            align-items:center;
-            gap:5px;
+        :root {
+            --primary-color: #0f172a; /* Azul Marino Oscuro */
+            --accent-color: #d97706;  /* Dorado/Ambar (como el avión) */
+            --success-color: #10b981; /* Verde Esmeralda */
+            --bg-color: #f1f5f9;      /* Gris muy suave */
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-light: #64748b;
         }
-        .wa-button:hover{background-color:#128C7E}
 
-        .output-container{margin-top:30px;padding-top:20px;border-top:2px solid #eee}
-        .output-box{position:relative;margin-bottom:15px}
-        .copy-button{position:absolute;top:30px;right:10px;background-color:#28a745;color:#fff;border:none;padding:5px 10px;border-radius:4px;cursor:pointer}
-        .hidden{display:none}
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
+            color: var(--text-main);
+            line-height: 1.6;
+            margin: 0;
+            padding: 40px 20px;
+            min-height: 100vh;
+        }
 
-        /* Historial */
-        .history-section {margin-top:40px; border-top:2px solid #ddd; padding-top:20px;}
-        .history-controls {display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; background-color: #f8f9fa; padding: 10px; border-radius: 6px;}
-        #historySearchInput {width: 300px; padding: 8px; border: 1px solid #ccc; border-radius: 4px;}
-        .clear-btn {background-color:#dc3545; color:white; border:none; padding:10px 15px; border-radius:5px; cursor:pointer; font-weight: 600;}
-        table {width:100%; border-collapse:collapse; font-size:0.9rem; margin-top: 10px;}
-        th, td {border:1px solid #e9ecef; padding:12px; text-align:left;}
-        th {background-color:#f2f2f2; color: #333; font-weight: 700;}
-        tr:nth-child(even) {background-color: #f9f9f9;}
-        .regenerate-btn {background-color:#17a2b8; color:white; border:none; padding:6px 12px; border-radius:4px; cursor:pointer; font-weight: 600;}
+        /* --- PANTALLA DE LOGIN (ESTILO CIBERSEGURIDAD) --- */
+        #loginOverlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at center, #1e293b 0%, #020617 100%);
+            z-index: 9999;
+            display: flex; justify-content: center; align-items: center;
+        }
+        
+        .login-box {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            padding: 50px;
+            border-radius: 20px;
+            width: 350px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
 
-        @media (max-width:700px){
-            .col-3,.col-4,.col-6,.col-8{grid-column: span 12}
-            .history-controls {flex-direction: column; gap: 10px;}
-            #historySearchInput {width: 100%;}
-            .wa-button {position:static; width:100%; margin-bottom:5px; justify-content:center;}
-            .copy-button {position:static; width:100%;}
-            table, thead, tbody, th, td, tr {display:block;}
-            thead tr {position:absolute; top:-9999px; left:-9999px;}
-            tr {margin-bottom:15px; border:1px solid #ccc;}
-            td {border:none; border-bottom:1px solid #eee; position:relative; padding-left:50%;}
-            td:before {position:absolute; top:10px; left:10px; width:45%; padding-right:10px; white-space:nowrap; font-weight:bold; content: attr(data-label);}
+        .login-box h2 { color: white; margin-bottom: 5px; font-weight: 600; letter-spacing: 1px;}
+        .login-box p { color: #94a3b8; margin-bottom: 30px; font-size: 0.9rem; }
+        
+        .login-box input {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid #334155;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            width: 100%;
+            box-sizing: border-box;
+            transition: all 0.3s ease;
+        }
+        
+        .login-box input:focus {
+            border-color: var(--accent-color);
+            outline: none;
+            box-shadow: 0 0 15px rgba(217, 119, 6, 0.3);
+        }
+
+        .login-btn {
+            background: linear-gradient(90deg, var(--accent-color), #b45309);
+            width: 100%; padding: 15px;
+            color: white; border: none; border-radius: 10px;
+            cursor: pointer; font-weight: bold; font-size: 1rem;
+            text-transform: uppercase; letter-spacing: 1px;
+            transition: transform 0.2s;
+        }
+        .login-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
+        .error-msg { color: #ef4444; margin-top: 15px; font-size: 0.85rem; display: none; }
+
+        /* --- INTERFAZ PRINCIPAL --- */
+        #appContent { display: none; } /* Oculto hasta login */
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background-color: var(--card-bg);
+            padding: 50px;
+            border-radius: 24px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            position: relative;
+            border-top: 5px solid var(--primary-color);
+        }
+
+        .logo { display: block; margin: 0 auto 30px; max-width: 280px; height: auto; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1)); }
+
+        h1 { color: var(--primary-color); font-size: 1.8rem; margin-bottom: 5px; text-transform: uppercase; letter-spacing: -0.5px; }
+        .subtitle { color: var(--text-light); font-size: 0.95rem; margin-top: 0; margin-bottom: 40px; border-bottom: 1px solid #e2e8f0; padding-bottom: 20px; }
+        #userDisplay { color: var(--accent-color); font-weight: 700; }
+
+        /* GRID Y CAMPOS */
+        .form-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 20px; }
+        .col-3{grid-column: span 3} .col-4{grid-column: span 4} .col-6{grid-column: span 6} .col-8{grid-column: span 8} .col-12{grid-column: span 12}
+
+        .form-group { display: flex; flex-direction: column; }
+        label { font-weight: 600; margin-bottom: 8px; color: var(--primary-color); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; }
+        
+        input, select, textarea {
+            width: 100%; padding: 12px 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 1rem;
+            color: var(--text-main);
+            background: #f8fafc;
+            transition: all 0.3s;
+            font-family: 'Poppins', sans-serif;
+            box-sizing: border-box;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none; border-color: var(--primary-color); background: #fff;
+            box-shadow: 0 0 0 4px rgba(15, 23, 42, 0.1);
+        }
+        
+        textarea { resize: vertical; min-height: 120px; }
+
+        /* BOTONES MODERNOS */
+        .main-button {
+            background: var(--primary-color);
+            color: #fff; padding: 18px; border: none; border-radius: 12px;
+            font-weight: 700; font-size: 1.1rem; width: 100%; cursor: pointer;
+            margin-top: 30px; text-transform: uppercase; letter-spacing: 1px;
+            box-shadow: 0 10px 15px -3px rgba(15, 23, 42, 0.3);
+            transition: all 0.3s;
+        }
+        .main-button:hover { background: #1e293b; transform: translateY(-2px); }
+
+        .sheets-button {
+            background: var(--success-color);
+            color: #fff; padding: 15px; border: none; border-radius: 10px;
+            font-weight: 700; width: 100%; cursor: pointer; margin-bottom: 20px;
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+            box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.4);
+            transition: transform 0.2s;
+        }
+        .sheets-button:hover { background: #059669; transform: translateY(-2px); }
+
+        /* RESULTADOS Y CAJAS */
+        .output-container { margin-top: 40px; padding: 30px; background: #f8fafc; border-radius: 15px; border: 1px solid #e2e8f0; }
+        h3 { color: var(--primary-color); border-left: 5px solid var(--accent-color); padding-left: 15px; margin: 30px 0 20px; }
+
+        .output-box { position: relative; margin-bottom: 25px; }
+        .output-box textarea { background: #fff; font-family: 'Courier New', monospace; font-size: 0.9rem; color: #334155; }
+        
+        .copy-button {
+            position: absolute; top: 38px; right: 10px;
+            background: #e2e8f0; color: #475569;
+            border: none; padding: 6px 12px; border-radius: 6px;
+            cursor: pointer; font-weight: 600; font-size: 0.8rem;
+            transition: background 0.2s;
+        }
+        .copy-button:hover { background: #cbd5e1; color: #0f172a; }
+
+        .wa-button {
+            position: absolute; top: 38px; right: 85px;
+            background: #25D366; color: white;
+            border: none; padding: 6px 12px; border-radius: 6px;
+            cursor: pointer; font-weight: 600; font-size: 0.8rem;
+            display: flex; align-items: center; gap: 5px;
+            box-shadow: 0 2px 5px rgba(37, 211, 102, 0.3);
+        }
+        .wa-button:hover { background: #128C7E; transform: translateY(-1px); }
+
+        .hidden { display: none; }
+
+        /* HISTORIAL */
+        .history-section { margin-top: 50px; }
+        .history-controls { 
+            display: flex; justify-content: space-between; align-items: center; 
+            margin-bottom: 20px; background: #f1f5f9; padding: 15px; border-radius: 12px; 
+        }
+        #historySearchInput { width: 300px; border: none; background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .clear-btn { background: #ef4444; color: white; padding: 10px 20px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
+        .clear-btn:hover { background: #dc2626; }
+
+        table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 15px; }
+        th { background: var(--primary-color); color: white; padding: 15px; text-align: left; font-weight: 600; letter-spacing: 0.5px; }
+        th:first-child { border-top-left-radius: 10px; }
+        th:last-child { border-top-right-radius: 10px; }
+        td { border-bottom: 1px solid #e2e8f0; padding: 15px; background: white; font-size: 0.9rem; }
+        tr:last-child td:first-child { border-bottom-left-radius: 10px; }
+        tr:last-child td:last-child { border-bottom-right-radius: 10px; }
+        tr:hover td { background: #f8fafc; }
+
+        .regenerate-btn {
+            background: #0ea5e9; color: white; border: none; padding: 8px 12px;
+            border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.8rem;
+        }
+        .regenerate-btn:hover { background: #0284c7; }
+
+        /* MOBILE */
+        @media (max-width: 700px) {
+            .container { padding: 20px; margin: 10px; }
+            .col-3, .col-4, .col-6, .col-8 { grid-column: span 12; }
+            .history-controls { flex-direction: column; gap: 10px; }
+            #historySearchInput { width: 100%; }
+            .wa-button { position: static; width: 100%; margin-bottom: 10px; justify-content: center; }
+            .copy-button { position: static; width: 100%; }
+            table, thead, tbody, th, td, tr { display: block; }
+            thead tr { position: absolute; top: -9999px; left: -9999px; }
+            tr { margin-bottom: 15px; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+            td { border: none; border-bottom: 1px solid #f1f5f9; position: relative; padding-left: 50%; }
+            td:before { position: absolute; top: 15px; left: 15px; width: 45%; padding-right: 10px; white-space: nowrap; font-weight: bold; color: var(--primary-color); content: attr(data-label); }
         }
     </style>
 </head>
 <body>
-    <div class="container">
+    <div id="loginOverlay">
+        <div class="login-box">
+            <h2 style="margin-top:0">ACCESO SEGURO</h2>
+            <p>Sistema Corporativo 1888 Hoteles</p>
+            <input type="text" id="loginUser" placeholder="ID de Usuario">
+            <input type="password" id="loginPass" placeholder="Contraseña de Acceso">
+            <button class="login-btn" id="btnLogin">INICIAR SESIÓN</button>
+            <p class="error-msg" id="loginError">⛔ Acceso Denegado</p>
+        </div>
+    </div>
+
+    <div class="container" id="appContent">
         <img src="logo.png" alt="Logo 1888hoteles" class="logo">
-        <h1>Sistema de Citas y Lead Management</h1>
-        <p class="subtitle">Desarrollado por Ali Gomez</p>
+        <h1>Sistema de Gestión de Citas</h1>
+        <p class="subtitle">Sesión iniciada por: <strong id="userDisplay"></strong></p>
         
         <form id="citaForm">
              <div class="form-grid">
@@ -99,6 +249,7 @@
                         <option value="Patricia Bustos">Patricia Bustos</option>
                         <option value="Ana Chacon">Ana Chacon</option>
                         <option value="Andrea Venegas">Andrea Venegas</option>
+                        <option value="Isabella Ramos">Isabella Ramos</option>
                     </select>
                 </div>
 
@@ -108,7 +259,7 @@
                 </div>
                 <div class="form-group col-4">
                     <label>L. Edad</label>
-                    <input type="number" id="edad1" placeholder="Ej: 35">
+                    <input type="number" id="edad1" placeholder="Edad">
                 </div>
 
                 <div class="form-group col-4">
@@ -183,30 +334,30 @@
                     <input type="text" id="notasInternas" placeholder="Opcional">
                 </div>
             </div>
-            <button type="button" class="main-button" id="generateButton">Generar Cita</button>
+            <button type="button" class="main-button" id="generateButton">🔐 Generar y Registrar Cita</button>
         </form>
         
         <div id="outputContainer" class="output-container hidden">
             <button class="sheets-button" id="copySheetsButton">📋 COPIAR FILA PARA GOOGLE SHEETS</button>
-            <p style="text-align:center; font-size:0.8rem; color:#666; margin-top:-10px; margin-bottom:20px">Clic arriba y luego Ctrl+V en la Columna A de tu hoja</p>
+            <p style="text-align:center; font-size:0.8rem; color:#64748b; margin-top:-10px; margin-bottom:20px">Datos formateados y listos para pegar</p>
 
-            <h3>Mensajes para WhatsApp</h3>
+            <h3>Mensajes Generados</h3>
             <div class="output-box"><label>1. Cita y Oferta</label><textarea id="whatsappOutput1" readonly></textarea><button class="copy-button" data-target="whatsappOutput1">Copiar</button></div>
             <div class="output-box"><label>2. Dirección</label><textarea id="whatsappOutput2" readonly></textarea><button class="copy-button" data-target="whatsappOutput2">Copiar</button></div>
             <div class="output-box"><label>3. Requisitos</label><textarea id="whatsappOutput3" readonly></textarea><button class="copy-button" data-target="whatsappOutput3">Copiar</button></div>
             
-            <div class="output-box">
-                <label>4. Confirmación Manager</label>
+            <div class="output-box" id="managerSection">
+                <label>4. Confirmación Manager (SOLO ISABELLA)</label>
                 <textarea id="confirmationOutput" readonly></textarea>
-                <button class="wa-button" id="btnWaClient">📲 Enviar al Cliente</button>
+                <button class="wa-button" id="btnWaClient">📲 WhatsApp Cliente</button>
                 <button class="copy-button" data-target="confirmationOutput">Copiar</button>
             </div>
         </div>
 
         <div class="history-section">
              <div class="history-controls">
-                 <input type="search" id="historySearchInput" placeholder="Buscar por teléfono...">
-                 <button id="clearHistoryButton" class="clear-btn">Limpiar Historial</button>
+                 <input type="search" id="historySearchInput" placeholder="🔍 Buscar cliente por teléfono...">
+                 <button id="clearHistoryButton" class="clear-btn">Limpiar Base de Datos</button>
              </div>
              <table>
                  <thead><tr><th>Invitados</th><th>Teléfono</th><th>Agente</th><th>Lugar</th><th>Fecha y Hora</th><th>Generado</th><th>Acciones</th></tr></thead>
