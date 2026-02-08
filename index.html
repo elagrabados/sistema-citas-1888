@@ -408,7 +408,7 @@
 
         let currentUser = null;
         let loginTime = null;
-        let currentPhoneForWA = ""; // Memoria temporal del teléfono
+        let lastGeneratedCita = null; // MEMORIA RAM PARA BOTONES
 
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('loginUser').focus();
@@ -538,7 +538,7 @@
             resetButton.addEventListener('click', () => {
                 form.reset();
                 if(currentUser) document.getElementById('agente').value = currentUser.name;
-                currentPhoneForWA = ""; 
+                lastGeneratedCita = null; 
                 outputContainer.classList.add('hidden');
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             });
@@ -549,8 +549,8 @@
                 const data = collectData();
                 generateMessages(data);
                 
-                // GUARDAR TELÉFONO EN MEMORIA
-                currentPhoneForWA = data.telefono;
+                // GUARDAR EN MEMORIA
+                lastGeneratedCita = data;
 
                 if(typeof addAppointmentToHistory === 'function') addAppointmentToHistory(data);
                 
@@ -567,15 +567,16 @@
 
             if(btnWaClient) {
                 btnWaClient.addEventListener('click', () => {
-                    // INTELIGENCIA DE BOTÓN: Busca en memoria SI la casilla está vacía
-                    let raw = document.getElementById('telefonoCliente').value.replace(/\D/g, '');
-                    if(!raw || raw.length < 5) {
-                        raw = currentPhoneForWA; // Usar memoria si el form está limpio
+                    // Usar memoria RAM si existe, sino leer del form
+                    let raw = "";
+                    if(lastGeneratedCita) {
+                        raw = lastGeneratedCita.telefono;
+                    } else {
+                        raw = document.getElementById('telefonoCliente').value.replace(/\D/g, '');
+                        if(raw.length === 10) raw = '1' + raw;
                     }
                     
-                    if(raw.length === 10) raw = '1' + raw;
-                    
-                    if(!raw || raw.length < 10) return alert("⚠️ No se encuentra un teléfono válido. Regenera la cita desde el historial.");
+                    if(!raw || raw.length < 10) return alert("⚠️ No se encuentra un teléfono válido. Genera una cita primero.");
                     
                     const message = document.getElementById('confirmationOutput').value;
                     const url = `https://api.whatsapp.com/send?phone=${raw}&text=${encodeURIComponent(message)}`;
@@ -583,8 +584,25 @@
                 });
             }
 
+            // BOTÓN COPIAR EXCEL (AHORA SÍ FUNCIONA CON MEMORIA)
             copySheetsButton.addEventListener('click', () => {
-                alert("Por favor copia desde la tabla de historial.");
+                if(!lastGeneratedCita) {
+                    alert("⚠️ Primero genera una cita o selecciona una del historial.");
+                    return;
+                }
+                const d = lastGeneratedCita;
+                const today = new Date().toISOString().split('T')[0];
+                const row = [d.fuente, d.agente, "", d.lugar, d.notas, today, d.fecha, new Date(d.fecha).toLocaleDateString('es-ES', {weekday:'long'}), d.hora, "", d.invitado1, d.edad1, d.invitado2, d.edad2, d.telefono, d.email, d.tipoInvitacion==='pareja'?'Casado':'Soltera', "", d.destino].join('\t');
+                
+                navigator.clipboard.writeText(row);
+                
+                const originalText = copySheetsButton.textContent;
+                copySheetsButton.textContent = "✅ ¡DATOS COPIADOS!";
+                copySheetsButton.style.backgroundColor = "#054b25";
+                setTimeout(() => { 
+                    copySheetsButton.textContent = originalText; 
+                    copySheetsButton.style.backgroundColor = "#10b981"; 
+                }, 2000);
             });
 
             document.querySelectorAll('.copy-button').forEach(btn => {
@@ -741,7 +759,7 @@
                     `;
                     
                     row.querySelector('.regenerate-btn').addEventListener('click', () => {
-                        // 1. RELLENAR FORMULARIO (VISUALMENTE)
+                        // 1. RELLENAR FORMULARIO
                         document.getElementById('telefonoCliente').value = cita.telefono;
                         document.getElementById('invitado1').value = cita.invitado1;
                         document.getElementById('tipoInvitacion').value = cita.tipoInvitacion;
@@ -749,13 +767,12 @@
                         document.getElementById('fecha').value = cita.fecha;
                         document.getElementById('oferta').value = cita.ofertaTexto; 
                         
-                        // Fix invitado 2 visibility
                         document.getElementById('tipoInvitacion').dispatchEvent(new Event('change'));
                         if(cita.invitado2) document.getElementById('invitado2').value = cita.invitado2;
 
-                        // 2. GENERAR MENSAJES + MEMORIA WA
+                        // 2. ACTUALIZAR MEMORIA Y MENSAJES
+                        lastGeneratedCita = cita; 
                         generateMessages(cita);
-                        currentPhoneForWA = cita.telefono; 
                         
                         outputContainer.classList.remove('hidden');
                         if(currentUser && currentUser.role !== "admin") {
