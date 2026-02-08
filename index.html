@@ -189,6 +189,20 @@
         </div>
     </div>
 
+    <script>
+        // Este script corre ANTES de que cargue el resto de la app
+        // para asegurar que el Captcha aparezca al instante.
+        (function() {
+            var num1 = Math.floor(Math.random() * 9) + 1;
+            var num2 = Math.floor(Math.random() * 9) + 1;
+            window.captchaSum = num1 + num2; // Guardar resultado globalmente
+            var questionBox = document.getElementById('captchaQuestion');
+            if(questionBox) {
+                questionBox.textContent = num1 + " + " + num2 + " = ?";
+            }
+        })();
+    </script>
+
     <div id="appContent">
         <div class="control-panel">
             <div class="status-grid" id="agentsGrid"></div>
@@ -335,7 +349,7 @@
     <script src="database.js"></script>
 
     <script>
-        // --- CONFIGURACIÓN DE USUARIOS ---
+        // CONFIGURACIÓN DE USUARIOS
         const USERS = {
             "isabela":  { pass: "admin2026",  name: "Isabella Ramos", role: "admin" },
             "paula":    { pass: "citas2026*", name: "Paula González", role: "admin" },
@@ -346,10 +360,9 @@
 
         let currentUser = null;
         let loginTime = null;
-        let captchaSum = 0;
 
         document.addEventListener('DOMContentLoaded', () => {
-            initCaptcha();
+            // Foco en usuario
             document.getElementById('loginUser').focus();
 
             const venueData = {
@@ -380,22 +393,20 @@
             document.getElementById('captchaInput').addEventListener('keypress', (e) => { if(e.key === 'Enter') performLogin(); });
             loginPass.addEventListener('keypress', (e) => { if(e.key === 'Enter') performLogin(); });
 
-            function initCaptcha() {
-                const num1 = Math.floor(Math.random() * 9) + 1;
-                const num2 = Math.floor(Math.random() * 9) + 1;
-                captchaSum = num1 + num2;
-                document.getElementById('captchaQuestion').textContent = `${num1} + ${num2} = ?`;
-                document.getElementById('captchaInput').value = '';
-            }
-
             function performLogin() {
                 const u = loginUser.value.toLowerCase().trim();
                 const p = loginPass.value.trim();
                 const c = parseInt(document.getElementById('captchaInput').value);
 
-                if (isNaN(c) || c !== captchaSum) {
+                // Verificar Captcha
+                if (isNaN(c) || c !== window.captchaSum) {
                     showError("⛔ ERROR MATEMÁTICO (CAPTCHA)");
-                    initCaptcha();
+                    // Recargar captcha
+                    var num1 = Math.floor(Math.random() * 9) + 1;
+                    var num2 = Math.floor(Math.random() * 9) + 1;
+                    window.captchaSum = num1 + num2;
+                    document.getElementById('captchaQuestion').textContent = num1 + " + " + num2 + " = ?";
+                    document.getElementById('captchaInput').value = '';
                     return;
                 }
 
@@ -473,4 +484,108 @@
 
             if(btnWaClient) {
                 btnWaClient.addEventListener('click', () => {
-                    let raw =
+                    let raw = document.getElementById('telefonoCliente').value.replace(/\D/g, '');
+                    if(raw.length === 10) raw = '1' + raw;
+                    if(!raw) return alert("Teléfono inválido");
+                    window.open(`https://wa.me/${raw}?text=${encodeURIComponent(document.getElementById('confirmationOutput').value)}`, '_blank');
+                });
+            }
+
+            copySheetsButton.addEventListener('click', () => {
+                const d = collectData();
+                const row = [d.fuente, d.agente, "", d.lugar, d.notas, new Date().toISOString().split('T')[0], d.fecha, new Date(d.fecha).toLocaleDateString('es-ES', {weekday:'long'}), d.hora, "", d.invitado1, d.edad1, d.invitado2, d.edad2, d.telefono, d.email, d.tipoInvitacion==='pareja'?'Casado':'Soltera', "", d.destino].join('\t');
+                navigator.clipboard.writeText(row);
+                alert("✅ Copiado para Excel");
+            });
+
+            document.querySelectorAll('.copy-button').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    document.getElementById(e.target.dataset.target).select();
+                    document.execCommand('copy');
+                });
+            });
+
+            // Init Helpers
+            updateHorarios();
+            if(typeof listenToHistory === 'function') listenToHistory(renderHistory);
+
+            function updateHorarios() {
+                const venue = venueData[document.getElementById('lugar').value];
+                const date = document.getElementById('fecha').value;
+                const sel = document.getElementById('hora');
+                sel.innerHTML = '<option value="">--</option>';
+                if(!venue || !date) return;
+                
+                const day = new Date(date + 'T12:00:00Z').getUTCDay();
+                let list = venue.schedules.any || [];
+                if(!list.length) list = (day===0 || day===6 || (document.getElementById('lugar').value.includes("Icon") && day===5)) ? venue.schedules.weekend : venue.schedules.weekday;
+                
+                list.forEach(h => {
+                    const opt = document.createElement('option');
+                    opt.value = h; opt.textContent = h; sel.appendChild(opt);
+                });
+            }
+
+            function collectData() {
+                let tel = document.getElementById('telefonoCliente').value.replace(/\D/g, '');
+                if(tel.length === 11 && tel.startsWith('1')) tel = tel.substring(1);
+                
+                let mail = document.getElementById('emailCliente').value;
+                if(!mail) {
+                    const name = (document.getElementById('invitado1').value || 'user').replace(/[^a-zA-Z]/g, '').toLowerCase();
+                    mail = `${name}${Math.floor(Math.random()*90)+10}@${Math.random()>0.5?'gmail.com':'hotmail.com'}`;
+                    document.getElementById('emailCliente').value = mail;
+                }
+
+                return {
+                    fuente: document.getElementById('fuenteLead').value,
+                    agente: document.getElementById('agente').value,
+                    invitado1: document.getElementById('invitado1').value,
+                    edad1: document.getElementById('edad1').value,
+                    invitado2: document.getElementById('invitado2').value,
+                    edad2: document.getElementById('edad2').value,
+                    telefono: tel,
+                    email: mail,
+                    lugar: document.getElementById('lugar').value,
+                    fecha: document.getElementById('fecha').value,
+                    hora: document.getElementById('hora').value,
+                    destino: document.getElementById('destinoRegalo').value,
+                    ofertaTexto: document.getElementById('oferta').value,
+                    notas: document.getElementById('notasInternas').value,
+                    tipoInvitacion: document.getElementById('tipoInvitacion').value,
+                    generated: new Date().toLocaleTimeString('en-US', { timeZone: 'America/New_York', hour:'2-digit', minute:'2-digit'})
+                };
+            }
+
+            function generateMessages(data) {
+                const dateObj = new Date(data.fecha + 'T12:00:00Z');
+                const dias = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+                const meses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+                const fechaTexto = `${dias[dateObj.getUTCDay()]} ${dateObj.getUTCDate()} de ${meses[dateObj.getUTCMonth()]}`;
+                
+                let msg1 = `CITA REGISTRADA - 1888 Hoteles\nAGENTE: ${data.agente}\nInvitados: ${data.invitado1}\nEvento: ${fechaTexto} ${data.hora}\n\n${data.ofertaTexto}`;
+                let msg2 = `Dirección: ${venueData[data.lugar].address}`;
+                let msg3 = `REQUISITOS:\n1- IDs Vigentes\n2- Tarjeta de Crédito (No débito)\n3- 90 min de tiempo`;
+                let msgConf = `¡Hola! ${data.invitado1} soy ${managerInfo.name}.\nConfirmando cita para mañana ${data.hora} en ${data.lugar}.\n\n${data.ofertaTexto}\n\nPor favor confirmar con SI.`;
+
+                document.getElementById('whatsappOutput1').value = msg1;
+                document.getElementById('whatsappOutput2').value = msg2;
+                document.getElementById('whatsappOutput3').value = msg3;
+                document.getElementById('confirmationOutput').value = msgConf;
+            }
+
+            function renderHistory(data) {
+                const div = document.getElementById('historyTableBody');
+                div.innerHTML = '';
+                if(!data) return;
+                Object.keys(data).reverse().slice(0,10).forEach(key => {
+                    const row = document.createElement('div');
+                    row.style.borderBottom = '1px solid #ccc'; row.style.padding='10px';
+                    row.innerHTML = `<strong>${data[key].invitado1}</strong> (${data[key].telefono}) <br> <small>${data[key].generated}</small>`;
+                    div.appendChild(row);
+                });
+            }
+        });
+    </script>
+</body>
+</html>
