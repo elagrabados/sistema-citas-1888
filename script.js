@@ -1,7 +1,8 @@
 // ===============================================
-// ARCHIVO: script.js (Versión v9.0 - CAPTCHA y Fix Login)
+// ARCHIVO: script.js (Versión v9.1 - FINAL DE HOY)
 // ===============================================
 
+// --- CONFIGURACIÓN DE USUARIOS ---
 const USERS = {
     "isabela":  { pass: "admin2026",  name: "Isabella Ramos", role: "admin" },
     "paula":    { pass: "citas2026*", name: "Paula González", role: "admin" },
@@ -12,16 +13,21 @@ const USERS = {
 
 let currentUser = null;
 let loginTime = null;
-let captchaSum = 0; // Variable para guardar el resultado del captcha
+let captchaSum = 0; // Variable para la suma
 
 document.addEventListener('DOMContentLoaded', () => {
-    // --- 1. INICIALIZAR CAPTCHA AL CARGAR ---
-    initCaptcha();
+    console.log("Sistema v9.1 Iniciado");
     
-    // Enfocar usuario
-    document.getElementById('loginUser').focus();
+    // --- 1. INICIAR CAPTCHA ---
+    // Si esto falla, es porque no existe el elemento en el HTML
+    try {
+        initCaptcha();
+        document.getElementById('loginUser').focus();
+    } catch (e) {
+        console.error("Error iniciando Captcha:", e);
+    }
 
-    // DATOS GLOBALES
+    // --- DATOS GLOBALES ---
     const venueData = {
         "Icon Park Orlando": { address: "8375 International Drive, Orlando, FL 32819 Suite 50", schedules: { weekday: ["11:00 AM", "12:30 PM", "2:00 PM", "3:30 PM"], weekend: ["11:00 AM", "12:00 PM", "1:00 PM", "2:00 PM", "3:00 PM"] }},
         "Vista Cay Resort": { address: "9650 Universal Blvd, Suite 120 Orlando, FL 32819", schedules: { any: ["9:00 AM", "11:00 AM", "1:00 PM", "3:00 PM"] }},
@@ -30,7 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const managerInfo = { name: "Isabella Ramos", phone: "(786) 5487-7819" };
 
-    // ELEMENTOS DOM
+    // --- ELEMENTOS ---
     const loginOverlay = document.getElementById('loginOverlay');
     const appContent = document.getElementById('appContent');
     const btnLogin = document.getElementById('btnLogin');
@@ -42,37 +48,46 @@ document.addEventListener('DOMContentLoaded', () => {
     const agentsGrid = document.getElementById('agentsGrid');
     
     // --- LÓGICA DE LOGIN ---
-    btnLogin.addEventListener('click', performLogin);
-    
-    // Permitir login con ENTER en cualquier campo
-    document.getElementById('captchaInput').addEventListener('keypress', (e) => { if(e.key === 'Enter') performLogin(); });
-    loginPass.addEventListener('keypress', (e) => { if(e.key === 'Enter') performLogin(); });
+    if(btnLogin) {
+        btnLogin.addEventListener('click', performLogin);
+    }
+
+    // Permitir Enter
+    if(document.getElementById('captchaInput')) {
+        document.getElementById('captchaInput').addEventListener('keypress', (e) => { if(e.key === 'Enter') performLogin(); });
+    }
+    if(loginPass) {
+        loginPass.addEventListener('keypress', (e) => { if(e.key === 'Enter') performLogin(); });
+    }
 
     function initCaptcha() {
-        const num1 = Math.floor(Math.random() * 10) + 1; // 1 a 10
-        const num2 = Math.floor(Math.random() * 10) + 1; // 1 a 10
+        const num1 = Math.floor(Math.random() * 9) + 1; // 1-9
+        const num2 = Math.floor(Math.random() * 9) + 1; // 1-9
         captchaSum = num1 + num2;
-        document.getElementById('captchaQuestion').textContent = `${num1} + ${num2} = ?`;
-        document.getElementById('captchaInput').value = '';
+        const capEl = document.getElementById('captchaQuestion');
+        const inpEl = document.getElementById('captchaInput');
+        
+        if(capEl) capEl.textContent = `${num1} + ${num2} = ?`;
+        if(inpEl) inpEl.value = '';
     }
 
     function performLogin() {
         const u = loginUser.value.toLowerCase().trim();
         const p = loginPass.value.trim();
-        const c = parseInt(document.getElementById('captchaInput').value);
+        const cBox = document.getElementById('captchaInput');
+        const c = cBox ? parseInt(cBox.value) : 0;
 
         // 1. Verificar Captcha
         if (isNaN(c) || c !== captchaSum) {
-            loginError.textContent = "⛔ ERROR DE SUMA (CAPTCHA INCORRECTO)";
+            loginError.textContent = "⛔ ERROR MATEMÁTICO (CAPTCHA)";
             loginError.style.display = "block";
-            initCaptcha(); // Cambiar números para evitar spam
+            initCaptcha(); 
             shakeBox();
             return;
         }
 
         // 2. Verificar Credenciales
         if (USERS[u] && USERS[u].pass === p) {
-            // ÉXITO
             currentUser = USERS[u];
             loginTime = new Date().toLocaleTimeString('en-US', { timeZone: 'America/New_York', hour: '2-digit', minute: '2-digit' });
             
@@ -80,38 +95,41 @@ document.addEventListener('DOMContentLoaded', () => {
             appContent.style.display = "block";
             userDisplay.textContent = currentUser.name;
             
-            // Auto-select agente
             const agenteSelect = document.getElementById('agente');
-            agenteSelect.value = currentUser.name;
+            if(agenteSelect) agenteSelect.value = currentUser.name;
 
-            // Permisos Admin
             if (currentUser.role !== "admin") {
-                managerSection.style.display = "none";
-                document.getElementById('clearHistoryButton').style.display = "none";
+                if(managerSection) managerSection.style.display = "none";
+                const clrBtn = document.getElementById('clearHistoryButton');
+                if(clrBtn) clrBtn.style.display = "none";
             } else {
-                managerSection.style.display = "block";
-                document.getElementById('clearHistoryButton').style.display = "block";
+                if(managerSection) managerSection.style.display = "block";
+                const clrBtn = document.getElementById('clearHistoryButton');
+                if(clrBtn) clrBtn.style.display = "block";
             }
             
             renderStatusPanel();
             startMiamiClock();
-
         } else {
-            loginError.textContent = "⛔ USUARIO O CLAVE INCORRECTOS";
+            loginError.textContent = "⛔ ACCESO DENEGADO";
             loginError.style.display = "block";
             shakeBox();
         }
     }
 
     function shakeBox() {
-        document.querySelector('.login-box').animate([
-            { transform: 'translateX(0)' }, { transform: 'translateX(-10px)' }, 
-            { transform: 'translateX(10px)' }, { transform: 'translateX(0)' }
-        ], { duration: 300 });
+        const box = document.querySelector('.login-box');
+        if(box) {
+            box.animate([
+                { transform: 'translateX(0)' }, { transform: 'translateX(-10px)' }, 
+                { transform: 'translateX(10px)' }, { transform: 'translateX(0)' }
+            ], { duration: 300 });
+        }
     }
 
-    // --- DASHBOARD FUNCTIONS ---
+    // --- DASHBOARD ---
     function renderStatusPanel() {
+        if(!agentsGrid) return;
         agentsGrid.innerHTML = '';
         Object.keys(USERS).forEach(key => {
             const user = USERS[key];
@@ -127,14 +145,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function startMiamiClock() {
+        const clockEl = document.getElementById('miamiTime');
+        if(!clockEl) return;
         setInterval(() => {
             const now = new Date();
             const timeString = now.toLocaleTimeString('en-US', { timeZone: 'America/New_York', hour12: true, hour: '2-digit', minute: '2-digit', second: '2-digit' });
-            document.getElementById('miamiTime').textContent = timeString;
+            clockEl.textContent = timeString;
         }, 1000);
     }
 
-    // --- FORMULARIO & LOGICA ---
+    // --- APP PRINCIPAL ---
     const form = document.getElementById('citaForm');
     const generateButton = document.getElementById('generateButton');
     const copySheetsButton = document.getElementById('copySheetsButton');
@@ -147,15 +167,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const clearHistoryButton = document.getElementById('clearHistoryButton');
     const historySearchInput = document.getElementById('historySearchInput');
 
-    tipoInvitacionSelect.addEventListener('change', toggleParejaFields);
-    lugarSelect.addEventListener('change', updateHorarios);
-    fechaInput.addEventListener('change', updateHorarios);
-    generateButton.addEventListener('click', handleGenerate);
-    copySheetsButton.addEventListener('click', copyForSheets);
+    if(tipoInvitacionSelect) tipoInvitacionSelect.addEventListener('change', toggleParejaFields);
+    if(lugarSelect) lugarSelect.addEventListener('change', updateHorarios);
+    if(fechaInput) fechaInput.addEventListener('change', updateHorarios);
+    if(generateButton) generateButton.addEventListener('click', handleGenerate);
+    if(copySheetsButton) copySheetsButton.addEventListener('click', copyForSheets);
 
     if(btnWaClient) {
         btnWaClient.addEventListener('click', () => {
             let rawPhone = document.getElementById('telefonoCliente').value;
             let phone = rawPhone.replace(/\D/g, ''); 
             if(phone.length === 10) phone = '1' + phone;
-            const message = document.getElementById
+            const message = document.getElementById('confirmationOutput').value;
+            if(!phone) { alert("Número inválido"); return; }
+            window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
+        });
+    }
