@@ -3,18 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Citas v5.3 - 1888hoteles</title>
+    <title>Sistema de Citas v5.8 - 1888hoteles</title>
     <style>
         body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;background-color:#f4f7f9;color:#333;line-height:1.6;margin:0;padding:20px}
         .container{max-width:950px;margin:0 auto;background-color:#fff;padding:25px 40px;border-radius:12px;box-shadow:0 6px 20px rgba(0,0,0,.08)}
-        /* CORRECCIÓN LOGO: Ajuste de tamaño y márgenes */
         .logo{display:block;margin:0 auto 20px;max-width:250px;height:auto}
         
         h1,h2,h3{color:#1a3b5d;text-align:center}
         h3{margin-top:0; margin-bottom: 0;}
         .subtitle{text-align:center;color:#888;margin-top:0;margin-bottom:30px;font-style:italic}
         
-        /* Grid del Formulario */
         .form-grid{display:grid;grid-template-columns:repeat(12, 1fr);gap:15px}
         .col-3{grid-column: span 3} .col-4{grid-column: span 4} .col-6{grid-column: span 6} .col-8{grid-column: span 8} .col-12{grid-column: span 12}
         
@@ -29,62 +27,46 @@
         .sheets-button{background-color:#107c41;color:#fff;padding:12px;border:none;border-radius:6px;font-weight:700;width:100%;cursor:pointer;margin-bottom:15px;display:flex;align-items:center;justify-content:center;gap:10px}
         .sheets-button:hover{background-color:#0b5c30}
         
+        /* ESTILO NUEVO: Botón de WhatsApp */
+        .wa-button{
+            position:absolute;
+            top:30px;
+            right:80px; /* Al lado del botón Copiar */
+            background-color:#25D366;
+            color:#fff;
+            border:none;
+            padding:5px 10px;
+            border-radius:4px;
+            cursor:pointer;
+            font-weight:bold;
+            display:flex;
+            align-items:center;
+            gap:5px;
+        }
+        .wa-button:hover{background-color:#128C7E}
+
         .output-container{margin-top:30px;padding-top:20px;border-top:2px solid #eee}
         .output-box{position:relative;margin-bottom:15px}
         .copy-button{position:absolute;top:30px;right:10px;background-color:#28a745;color:#fff;border:none;padding:5px 10px;border-radius:4px;cursor:pointer}
         .hidden{display:none}
 
-        /* --- ESTILOS EXACTOS HISTORIAL --- */
+        /* Historial */
         .history-section {margin-top:40px; border-top:2px solid #ddd; padding-top:20px;}
-        
-        .history-controls {
-            display:flex; 
-            justify-content:space-between; 
-            align-items:center; 
-            margin-bottom:15px;
-            background-color: #f8f9fa;
-            padding: 10px;
-            border-radius: 6px;
-        }
-
-        #historySearchInput {
-            width: 300px;
-            padding: 8px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-        }
-
-        .clear-btn {
-            background-color:#dc3545; 
-            color:white; 
-            border:none; 
-            padding:10px 15px; 
-            border-radius:5px; 
-            cursor:pointer;
-            font-weight: 600;
-        }
-        .clear-btn:hover {background-color: #c82333;}
-
+        .history-controls {display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; background-color: #f8f9fa; padding: 10px; border-radius: 6px;}
+        #historySearchInput {width: 300px; padding: 8px; border: 1px solid #ccc; border-radius: 4px;}
+        .clear-btn {background-color:#dc3545; color:white; border:none; padding:10px 15px; border-radius:5px; cursor:pointer; font-weight: 600;}
         table {width:100%; border-collapse:collapse; font-size:0.9rem; margin-top: 10px;}
         th, td {border:1px solid #e9ecef; padding:12px; text-align:left;}
         th {background-color:#f2f2f2; color: #333; font-weight: 700;}
         tr:nth-child(even) {background-color: #f9f9f9;}
-
-        .regenerate-btn {
-            background-color:#17a2b8;
-            color:white; 
-            border:none; 
-            padding:6px 12px; 
-            border-radius:4px; 
-            cursor:pointer;
-            font-weight: 600;
-        }
-        .regenerate-btn:hover {background-color:#138496;}
+        .regenerate-btn {background-color:#17a2b8; color:white; border:none; padding:6px 12px; border-radius:4px; cursor:pointer; font-weight: 600;}
 
         @media (max-width:700px){
             .col-3,.col-4,.col-6,.col-8{grid-column: span 12}
             .history-controls {flex-direction: column; gap: 10px;}
             #historySearchInput {width: 100%;}
+            .wa-button {position:static; width:100%; margin-bottom:5px; justify-content:center;}
+            .copy-button {position:static; width:100%;}
             table, thead, tbody, th, td, tr {display:block;}
             thead tr {position:absolute; top:-9999px; left:-9999px;}
             tr {margin-bottom:15px; border:1px solid #ccc;}
@@ -96,7 +78,6 @@
 <body>
     <div class="container">
         <img src="logo.png" alt="Logo 1888hoteles" class="logo">
-        
         <h1>Sistema de Citas y Lead Management</h1>
         <p class="subtitle">Desarrollado por Ali Gomez</p>
         
@@ -206,16 +187,20 @@
         </form>
         
         <div id="outputContainer" class="output-container hidden">
-            <button class="sheets-button" id="copySheetsButton">
-                📋 COPIAR FILA PARA GOOGLE SHEETS
-            </button>
+            <button class="sheets-button" id="copySheetsButton">📋 COPIAR FILA PARA GOOGLE SHEETS</button>
             <p style="text-align:center; font-size:0.8rem; color:#666; margin-top:-10px; margin-bottom:20px">Clic arriba y luego Ctrl+V en la Columna A de tu hoja</p>
 
             <h3>Mensajes para WhatsApp</h3>
             <div class="output-box"><label>1. Cita y Oferta</label><textarea id="whatsappOutput1" readonly></textarea><button class="copy-button" data-target="whatsappOutput1">Copiar</button></div>
             <div class="output-box"><label>2. Dirección</label><textarea id="whatsappOutput2" readonly></textarea><button class="copy-button" data-target="whatsappOutput2">Copiar</button></div>
             <div class="output-box"><label>3. Requisitos</label><textarea id="whatsappOutput3" readonly></textarea><button class="copy-button" data-target="whatsappOutput3">Copiar</button></div>
-            <div class="output-box"><label>4. Confirmación Manager</label><textarea id="confirmationOutput" readonly></textarea><button class="copy-button" data-target="confirmationOutput">Copiar</button></div>
+            
+            <div class="output-box">
+                <label>4. Confirmación Manager</label>
+                <textarea id="confirmationOutput" readonly></textarea>
+                <button class="wa-button" id="btnWaClient">📲 Enviar al Cliente</button>
+                <button class="copy-button" data-target="confirmationOutput">Copiar</button>
+            </div>
         </div>
 
         <div class="history-section">
@@ -223,19 +208,8 @@
                  <input type="search" id="historySearchInput" placeholder="Buscar por teléfono...">
                  <button id="clearHistoryButton" class="clear-btn">Limpiar Historial</button>
              </div>
-             
              <table>
-                 <thead>
-                     <tr>
-                         <th>Invitados</th>
-                         <th>Teléfono</th>
-                         <th>Agente</th>
-                         <th>Lugar</th>
-                         <th>Fecha y Hora</th>
-                         <th>Generado</th>
-                         <th>Acciones</th>
-                     </tr>
-                 </thead>
+                 <thead><tr><th>Invitados</th><th>Teléfono</th><th>Agente</th><th>Lugar</th><th>Fecha y Hora</th><th>Generado</th><th>Acciones</th></tr></thead>
                  <tbody id="historyTableBody"></tbody>
              </table>
         </div>
