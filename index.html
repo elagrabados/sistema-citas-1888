@@ -408,6 +408,7 @@
 
         let currentUser = null;
         let loginTime = null;
+        let currentPhoneForWA = ""; // Variable para guardar el teléfono aunque se limpie el form
 
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('loginUser').focus();
@@ -537,35 +538,43 @@
             resetButton.addEventListener('click', () => {
                 form.reset();
                 if(currentUser) document.getElementById('agente').value = currentUser.name;
+                currentPhoneForWA = ""; // Limpiar memoria
                 outputContainer.classList.add('hidden');
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             });
 
-            // BOTÓN GENERAR Y LIMPIAR
+            // BOTÓN GENERAR
             generateButton.addEventListener('click', () => {
                 if (!form.checkValidity()) { form.reportValidity(); return; }
                 const data = collectData();
                 generateMessages(data);
+                
+                // GUARDAR TELÉFONO EN MEMORIA PARA WHATSAPP
+                currentPhoneForWA = data.telefono;
+
                 if(typeof addAppointmentToHistory === 'function') addAppointmentToHistory(data);
                 
                 outputContainer.classList.remove('hidden');
                 if(currentUser.role !== "admin") managerSection.style.display = "none";
                 
-                // --- AUTO LIMPIEZA ---
+                // AUTO LIMPIEZA
                 form.reset();
-                document.getElementById('agente').value = currentUser.name; // Restaurar agente
+                document.getElementById('agente').value = currentUser.name; 
                 
                 window.scrollTo({ top: outputContainer.offsetTop - 20, behavior: 'smooth' });
-                alert("✅ Cita registrada. El formulario se ha limpiado para la siguiente.");
+                alert("✅ Cita registrada. El formulario se ha limpiado.");
             });
 
             if(btnWaClient) {
                 btnWaClient.addEventListener('click', () => {
-                    let raw = document.getElementById('telefonoCliente').value.replace(/\D/g, '');
-                    if(raw.length === 10) raw = '1' + raw;
-                    if(!raw) return alert("Teléfono inválido");
+                    // Usar memoria si existe, sino intentar leer del form (por si acaso)
+                    let raw = currentPhoneForWA || document.getElementById('telefonoCliente').value.replace(/\D/g, '');
                     
-                    // USO DE API.WHATSAPP.COM PARA EMOJIS
+                    // Limpieza extra por seguridad
+                    if(raw.length === 10) raw = '1' + raw;
+                    
+                    if(!raw || raw.length < 10) return alert("Teléfono inválido o no encontrado.");
+                    
                     const message = document.getElementById('confirmationOutput').value;
                     const url = `https://api.whatsapp.com/send?phone=${raw}&text=${encodeURIComponent(message)}`;
                     window.open(url, '_blank');
@@ -573,16 +582,7 @@
             }
 
             copySheetsButton.addEventListener('click', () => {
-                const d = collectData(); // Ojo: collectData lee del form. Si el form se limpia, esto falla si se hace despues. 
-                // Pero el botón copiar ahora debería usarse ANTES o deberíamos guardar la última data generada.
-                // Como añadimos autolimpieza, este botón de arriba quizás quede obsoleto si no se usa antes.
-                // CORRECCIÓN: Como el form se limpia, este botón solo funciona si se usa ANTES de generar o si guardamos el estado.
-                // Para simplificar, asumimos que copian del historial o generamos de nuevo si hiciera falta, pero
-                // para Excel lo mejor es copiar la fila que acabamos de generar.
-                
-                // Sin embargo, como ya se guardó en la nube, es mejor copiar desde la tabla de historial si se necesita.
-                // Dejaré la funcionalidad basica aqui.
-                alert("Para copiar a Excel, usa los datos generados o el historial.");
+                alert("Por favor copia desde la tabla de historial.");
             });
 
             document.querySelectorAll('.copy-button').forEach(btn => {
@@ -667,7 +667,6 @@
 
                 let msg2 = `Dirección para retirar las vacaciones:\n${venueData[data.lugar].address}`;
 
-                // LOGICA REQUISITOS (con el cambio de "no tiene costo")
                 let msg3 = `IMPORTANTE REQUISITOS PARA RETIRAR SUS PREMIOS SIN INCONVENIENTES\n\n`;
                 msg3 += esPareja 
                     ? `📇 1- Deben asistir juntos con sus IDs o Licencia Vigentes.\n`
@@ -692,7 +691,6 @@
                 document.getElementById('confirmationOutput').value = msgConf;
             }
 
-            // --- FUNCIÓN RENDERIZAR TABLA (FIX RE-GENERAR) ---
             function renderHistory(data) {
                 const container = document.getElementById('historyTableBody');
                 const searchTerm = historySearchInput.value.toLowerCase().trim();
@@ -707,7 +705,6 @@
 
                 let historyKeys = Object.keys(data).reverse();
 
-                // FILTRO
                 if (searchTerm) {
                     historyKeys = historyKeys.filter(key => {
                         const entry = data[key];
@@ -722,7 +719,6 @@
                     return;
                 }
 
-                // DIBUJAR FILAS
                 historyKeys.slice(0, 20).forEach(key => {
                     const cita = data[key];
                     const row = document.createElement('tr');
@@ -743,16 +739,11 @@
                     `;
                     
                     row.querySelector('.regenerate-btn').addEventListener('click', () => {
-                        // 1. LLENAR FORMULARIO
-                        document.getElementById('telefonoCliente').value = cita.telefono;
-                        document.getElementById('invitado1').value = cita.invitado1;
-                        document.getElementById('tipoInvitacion').value = cita.tipoInvitacion;
-                        document.getElementById('oferta').value = cita.ofertaTexto; 
-                        
-                        // 2. GENERAR MENSAJES
+                        // RE-GENERAR
                         generateMessages(cita);
-                        outputContainer.classList.remove('hidden');
+                        currentPhoneForWA = cita.telefono; // CARGAR MEMORIA PARA WHATSAPP
                         
+                        outputContainer.classList.remove('hidden');
                         if(currentUser && currentUser.role !== "admin") {
                             managerSection.style.display = "none";
                         } else {
